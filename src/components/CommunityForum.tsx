@@ -64,7 +64,7 @@ export const CommunityForum: React.FC = () => {
             <span>Halaqah & Ruang Diskusi Santri</span>
           </div>
           <h1 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
-            Forum Interaksi & Berbagi Tips Istana Memori
+            Forum Interaksi & Berbagi Tips Kota Memori
           </h1>
           <p className="text-xs text-slate-500 mt-0.5">
             Diskusikan jangkar visual ayat, konsultasikan tajwid, dan temukan sahabat muraja'ah sebaya.
@@ -147,7 +147,7 @@ export const CommunityForum: React.FC = () => {
             type="text"
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Cari materi pembelajaran, tips istana memori, atau pertanyaan santri..."
+            placeholder="Cari materi pembelajaran, tips kota memori, atau pertanyaan santri..."
             className="w-full pl-9 pr-4 py-2 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
           />
         </div>

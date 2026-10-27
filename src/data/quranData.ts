@@ -161,7 +161,7 @@ export const DETAILED_SURAHS: Record<number, Ayah[]> = {
     }
   ],
 
-  // Surah Al-Mulk (67) - Blueprint Istana Memori Primadona
+  // Surah Al-Mulk (67) - Blueprint Kota Memori Primadona
   67: [
     {
       numberInSurah: 1,
@@ -410,7 +410,7 @@ export function getAyahsForSurah(surahNumber: number): Ayah[] {
       translationEn: `Verse ${i} from Surah ${surahMeta?.nameLatin} (${surahMeta?.englishNameTranslation}).`,
       audioUrl: `https://everyayah.com/data/Alafasy_128kbps/${formattedSurah}${formattedAyah}.mp3`,
       tajweedRule: "Hukum tajwid: Perhatikan makharijul huruf, mad thabi'i, dan kaidah waqf pada akhir ayat.",
-      memoryHint: `Loci ${i}: Titik istana memori ${i} pada rute muraja'ah Surah ${surahMeta?.nameLatin}.`
+      memoryHint: `Loci ${i}: Titik kota memori ${i} pada rute muraja'ah Surah ${surahMeta?.nameLatin}.`
     });
   }
   return list;

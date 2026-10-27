@@ -61,7 +61,7 @@ export const TopNav: React.FC = () => {
               Hafidz Quran Islamicity
             </div>
             <div className="text-xs text-slate-500 dark:text-slate-400 hidden sm:block whitespace-nowrap">
-              Sistem Hafal Quran · Istana Memori
+              Sistem Hafal Quran · Kota Memori
             </div>
           </button>
         </div>
@@ -89,7 +89,7 @@ export const TopNav: React.FC = () => {
             }`}
           >
             <Sparkles className="w-4 h-4 text-amber-500" />
-            <span>Istana Memori</span>
+            <span>Kota Memori</span>
           </button>
 
           <button
@@ -217,7 +217,7 @@ export const TopNav: React.FC = () => {
           onClick={() => setActiveTab('palace')}
           className={`px-2.5 py-1 rounded-md whitespace-nowrap ${activeTab === 'palace' ? 'font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50' : 'text-slate-600 dark:text-slate-400'}`}
         >
-          Istana Memori
+          Kota Memori
         </button>
         <button
           onClick={() => setActiveTab('tajweed')}

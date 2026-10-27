@@ -57,6 +57,7 @@ interface AppContextType {
   setShowReminderModal: (val: boolean) => void;
   isFocusMode: boolean;
   setIsFocusMode: (val: boolean) => void;
+  checkInDailyStreak: () => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -74,16 +75,19 @@ const STORAGE_KEYS = {
 const DEFAULT_GAMIFICATION: GamificationState = {
   xp: 340,
   level: 2,
-  levelTitle: "Thalib Istana Memori",
+  levelTitle: "Thalib Kota Memori",
   streakDays: 4,
   lastActiveDate: new Date().toISOString().split('T')[0],
   dailyGoalAyahs: 3,
   todayCompletedAyahs: 2,
   badges: [
-    { id: 'b1', title: 'Langkah Pertama', description: 'Menghafal ayat pertama dengan metode Istana Memori', unlocked: true, unlockedAt: '2026-10-23', icon: 'Sparkles' },
+    { id: 'b1', title: 'Langkah Pertama', description: 'Menghafal ayat pertama dengan metode Kota Memori', unlocked: true, unlockedAt: '2026-10-23', icon: 'Sparkles' },
     { id: 'b2', title: 'Fasahah Al-Lisan', description: 'Mencapai skor tajwid AI di atas 90%', unlocked: true, unlockedAt: '2026-10-25', icon: 'Mic' },
     { id: 'b3', title: 'Penjaga Subuh', description: 'Konsisten setoran ba\'da subuh 3 hari berturut-turut', unlocked: true, unlockedAt: '2026-10-26', icon: 'Sunrise' },
-    { id: 'b4', title: 'Arsitek Istana Mulk', description: 'Menuntaskan pemetaan 10 Loci Surah Al-Mulk', unlocked: false, icon: 'Castle' },
+    { id: 'b-streak-7', title: 'Lencana Istiqomah Sepekan', description: 'Konsisten hafalan 7 hari berturut-turut tanpa putus', unlocked: false, icon: 'Flame' },
+    { id: 'b-streak-14', title: 'Faris Al-Istiqomah', description: 'Menjaga hafalan 14 hari berturut-turut', unlocked: false, icon: 'Shield' },
+    { id: 'b-streak-30', title: 'Penjaga Wahyu Bulanan', description: 'Konsistensi emas 30 hari penuh di Kota Memori', unlocked: false, icon: 'Trophy' },
+    { id: 'b4', title: 'Arsitek Kota Mulk', description: 'Menuntaskan pemetaan 10 Loci Surah Al-Mulk', unlocked: false, icon: 'Castle' },
     { id: 'b5', title: 'Khatam Juz 30', description: 'Menyelesaikan seluruh surat di Juz \'Amma', unlocked: false, icon: 'Award' }
   ]
 };
@@ -102,7 +106,7 @@ const DEFAULT_STUDENTS: StudentProgress[] = [
     lastSetoranAyahRange: 'Ayat 7-10',
     tajweedScore: 92,
     status: 'active',
-    teacherNotes: 'Makhraj huruf Shad dan Dhad semakin matang. Asosiasi istana memori di perapian sangat kokoh.'
+    teacherNotes: 'Makhraj huruf Shad dan Dhad semakin matang. Asosiasi kota memori di perapian sangat kokoh.'
   },
   {
     id: 'std-2',
@@ -159,7 +163,7 @@ const DEFAULT_FORUM: ForumPost[] = [
     role: 'Santri',
     surahTag: 'Surah Al-Mulk',
     title: 'Bagaimana cara menaruh jangkar visual untuk ayat yang mirip?',
-    content: 'Assalamu\'alaikum ustadz dan rekan-rekan. Saat menghafal ayat 3 dan 4 Al-Mulk yang sama-sama menyebut "Farji\'il-bashar" dan "Tsummarji\'il-bashar", bagaimana trik istana memorinya agar tidak tertukar saat shalat subuh?',
+    content: 'Assalamu\'alaikum ustadz dan rekan-rekan. Saat menghafal ayat 3 dan 4 Al-Mulk yang sama-sama menyebut "Farji\'il-bashar" dan "Tsummarji\'il-bashar", bagaimana trik kota memorinya agar tidak tertukar saat shalat subuh?',
     createdAt: '2 jam yang lalu',
     likes: 14,
     isLiked: false,
@@ -180,7 +184,7 @@ const DEFAULT_FORUM: ForumPost[] = [
     role: 'Santri',
     surahTag: 'Tips Orang Dewasa',
     title: 'Pengalaman 4 hari pertama: 10 menit commute kereta jadi produktif',
-    content: 'Dulu saya selalu merasa otak sudah berumur 40-an susah menghafal Al-Quran. Ternyata setelah pakai metode Blueprint Istana Memori, saya tidak lagi menghafal huruf per huruf, tapi membayangkan ruangan rumah. 10 menit di KRL Commuter Line bisa muraja\'ah 5 ayat lancar tanpa buka hp terus-menerus. Barakallahu fiikum!',
+    content: 'Dulu saya selalu merasa otak sudah berumur 40-an susah menghafal Al-Quran. Ternyata setelah pakai metode Blueprint Kota Memori, saya tidak lagi menghafal huruf per huruf, tapi membayangkan ruangan rumah. 10 menit di KRL Commuter Line bisa muraja\'ah 5 ayat lancar tanpa buka hp terus-menerus. Barakallahu fiikum!',
     createdAt: '5 jam yang lalu',
     likes: 29,
     isLiked: true,
@@ -196,7 +200,7 @@ const DEFAULT_REMINDERS: DailyReminderConfig[] = [
     frequency: 'daily',
     soundEnabled: true,
     reminderType: 'subuh',
-    message: 'Waktu terbaik saat pikiran masih jernih. Mulai 2 ayat baru di Istana Memori Anda.'
+    message: 'Waktu terbaik saat pikiran masih jernih. Mulai 2 ayat baru di Kota Memori Anda.'
   },
   {
     enabled: true,
@@ -389,7 +393,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const newLevel = Math.floor(newXP / 200) + 1;
       let newLevelTitle = prev.levelTitle;
       if (newLevel === 1) newLevelTitle = "Thalib Pemula";
-      else if (newLevel === 2) newLevelTitle = "Thalib Istana Memori";
+      else if (newLevel === 2) newLevelTitle = "Thalib Kota Memori";
       else if (newLevel === 3) newLevelTitle = "Mutsaqqaf Al-Quran";
       else if (newLevel === 4) newLevelTitle = "Faris At-Tartil";
       else newLevelTitle = "Hafidz Berdaya";
@@ -415,6 +419,49 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         levelTitle: newLevelTitle
       };
     });
+  };
+
+  // Check in daily streak to record consecutive memorization days
+  const checkInDailyStreak = () => {
+    setGamification(prev => {
+      const newStreak = prev.streakDays + 1;
+      const today = new Date().toISOString().split('T')[0];
+
+      // Auto unlock consistency streak badges
+      const updatedBadges = prev.badges.map(b => {
+        if (b.id === 'b3' && newStreak >= 3 && !b.unlocked) {
+          return { ...b, unlocked: true, unlockedAt: today };
+        }
+        if (b.id === 'b-streak-7' && newStreak >= 7 && !b.unlocked) {
+          return { ...b, unlocked: true, unlockedAt: today };
+        }
+        if (b.id === 'b-streak-14' && newStreak >= 14 && !b.unlocked) {
+          return { ...b, unlocked: true, unlockedAt: today };
+        }
+        if (b.id === 'b-streak-30' && newStreak >= 30 && !b.unlocked) {
+          return { ...b, unlocked: true, unlockedAt: today };
+        }
+        return b;
+      });
+
+      confetti({
+        particleCount: 75,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+
+      if (!isFocusMode) {
+        setNotificationBanner(`Barakallah! Streak bertambah menjadi ${newStreak} Hari Berturut-turut! (+50 XP)`);
+      }
+
+      return {
+        ...prev,
+        streakDays: newStreak,
+        lastActiveDate: today,
+        badges: updatedBadges
+      };
+    });
+    addXP(50, 'Check-in Konsistensi Menghafal');
   };
 
   // Update Ayah memorization status
@@ -599,7 +646,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       showReminderModal,
       setShowReminderModal,
       isFocusMode,
-      setIsFocusMode
+      setIsFocusMode,
+      checkInDailyStreak
     }}>
       {children}
     </AppContext.Provider>

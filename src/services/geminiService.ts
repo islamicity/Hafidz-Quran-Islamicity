@@ -141,7 +141,7 @@ export async function generateCustomLoci(
   if (ai) {
     try {
       const prompt = `
-Gunakan metode 'Blueprint Istana Memori: Mulai Menghafal di Hari Pertama' untuk menghasilkan 1 titik Loci hafalan:
+Gunakan metode 'Blueprint Kota Memori: Mulai Menghafal di Hari Pertama' untuk menghasilkan 1 titik Loci hafalan:
 Surah: ${surahName} (Ayat ${ayahNumber})
 Lafaz: ${ayahArabic}
 Artinya: ${translation}

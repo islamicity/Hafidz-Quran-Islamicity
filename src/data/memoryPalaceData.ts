@@ -1,6 +1,6 @@
 /**
- * Blueprint Istana Memori Data & Guidance
- * Based on "Blueprint Istana Memori: Mulai Menghafal di Hari Pertama" & "Sistem Hafal Quran (SHQ)"
+ * Blueprint Kota Memori Data & Guidance
+ * Based on "Blueprint Kota Memori: Mulai Menghafal di Hari Pertama" & "Sistem Hafal Quran (SHQ)"
  */
 import { MemoryPalaceRoom } from '../types';
 
@@ -47,7 +47,7 @@ export const ISTANA_MEMORI_STEPS: MethodStep[] = [
     title: "Tahap 4: Mental Walk Interaktif & Muraja'ah Imersif (Recall)",
     subtitle: "Berjalanlah secara imajinatif dari Titik 1 ke Titik 10 sambil melafalkan ayat",
     duration: "5 Menit",
-    actionGuidance: "Tutup mata sejenak atau ikuti visualizer istana di aplikasi. Berjalanlah dari pintu masuk ke jam dinding, lalu ke meja. Lafalkan ayat pada setiap titik. Uji juga berjalan mundur dari Titik 10 ke Titik 1 untuk memastikan hafalan mutqin tanpa tergantung urutan kaku.",
+    actionGuidance: "Tutup mata sejenak atau ikuti visualizer kota di aplikasi. Berjalanlah dari pintu masuk ke jam dinding, lalu ke meja. Lafalkan ayat pada setiap titik. Uji juga berjalan mundur dari Titik 10 ke Titik 1 untuk memastikan hafalan mutqin tanpa tergantung urutan kaku.",
     adultTip: "Dapat dilakukan saat commute di kereta, menyetir, atau sebelum tidur malam selama 5 menit tanpa perlu memegang mushaf fisik.",
     iconName: "Footprints"
   },

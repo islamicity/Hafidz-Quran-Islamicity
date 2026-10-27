@@ -386,7 +386,7 @@ export const QuranTracker: React.FC = () => {
                   [Teks Arab Ditutup untuk Uji Ingatan]
                 </div>
                 <p className="text-xs text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  Bayangkan titik Istana Memori dan lafalkan ayat ini dari ingatan visual Anda, 
+                  Bayangkan titik Kota Memori dan lafalkan ayat ini dari ingatan visual Anda, 
                   kemudian putar audio untuk mencocokkan kelancaran.
                 </p>
               </div>
@@ -601,7 +601,7 @@ export const QuranTracker: React.FC = () => {
                     <div className="text-amber-800 dark:text-amber-300 flex items-start gap-1.5">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0 mt-0.5" />
                       <div>
-                        <strong>Istana Memori:</strong> {focusedAyah.memoryHint}
+                        <strong>Kota Memori:</strong> {focusedAyah.memoryHint}
                       </div>
                     </div>
                   )}
@@ -996,7 +996,7 @@ export const QuranTracker: React.FC = () => {
                 className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-xs font-medium rounded-lg transition-colors flex items-center gap-1.5 text-white"
               >
                 <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-                <span>Buka Blueprint Istana Memori</span>
+                <span>Buka Blueprint Kota Memori</span>
               </button>
 
               <button
@@ -1128,7 +1128,7 @@ export const QuranTracker: React.FC = () => {
                       </div>
                       {ayah.memoryHint && (
                         <div>
-                          <strong className="text-amber-700 dark:text-amber-400">Jangkar Istana Memori:</strong> {ayah.memoryHint}
+                          <strong className="text-amber-700 dark:text-amber-400">Jangkar Kota Memori:</strong> {ayah.memoryHint}
                         </div>
                       )}
                     </div>

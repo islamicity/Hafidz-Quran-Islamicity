@@ -29,7 +29,7 @@ export const ReminderModal: React.FC = () => {
   const [isAddingNew, setIsAddingNew] = useState(false);
   const [newTime, setNewTime] = useState('06:00');
   const [newName, setNewName] = useState('Muraja\'ah Singkat Pagi');
-  const [newMessage, setNewMessage] = useState('Luangkan 5 menit di Istana Memori sebelum beraktivitas kerja.');
+  const [newMessage, setNewMessage] = useState('Luangkan 5 menit di Kota Memori sebelum beraktivitas kerja.');
   const [newFrequency, setNewFrequency] = useState<'daily' | 'workdays' | 'custom'>('daily');
 
   if (!showReminderModal) return null;
@@ -55,12 +55,12 @@ export const ReminderModal: React.FC = () => {
   const sendTestNotification = () => {
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       new Notification('Hafidz Quran Islamicity · Pengingat Belajar', {
-        body: 'Saatnya istirahat sejenak! Mari telusuri 2 titik Loci di Istana Memori Surah Al-Mulk.',
+        body: 'Saatnya istirahat sejenak! Mari telusuri 2 titik Loci di Kota Memori Surah Al-Mulk.',
         icon: '/favicon.ico'
       });
       setTestSuccessMessage('Notifikasi push percontohan berhasil dikirim ke layar Anda!');
     } else {
-      setTestSuccessMessage('Simulasi Pengingat: [05:15 Ba\'da Subuh] "Pikiran jernih, mari sambung 2 ayat di Istana Memori."');
+      setTestSuccessMessage('Simulasi Pengingat: [05:15 Ba\'da Subuh] "Pikiran jernih, mari sambung 2 ayat di Kota Memori."');
     }
     addXP(10, 'Menguji Notifikasi Pengingat');
     setTimeout(() => setTestSuccessMessage(null), 4000);

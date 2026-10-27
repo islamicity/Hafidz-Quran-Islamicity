@@ -150,7 +150,7 @@ export const SyncBackupModal: React.FC = () => {
               <span>Enkripsi End-to-End & Privasi Terjamin</span>
             </div>
             <p className="text-emerald-800/90 dark:text-emerald-200/90 text-[11px] leading-relaxed">
-              Semua rekaman suara setoran, catatan istana memori pribadi, dan skor tilawah Anda dienkripsi secara lokal 
+              Semua rekaman suara setoran, catatan kota memori pribadi, dan skor tilawah Anda dienkripsi secara lokal 
               sebelum dicadangkan. Tidak ada pihak luar yang dapat mengakses data ibadah Anda.
             </p>
           </div>

@@ -1,6 +1,7 @@
 /**
  * Gamification & Motivation Center
- * Tailored for busy working adults with daily streaks, levels, badges, and healthy encouragement
+ * Features a Visual 'Consistency Streak' Counter, 7-Day Rolling Heatmap,
+ * Reward Badges showcase, Adult Pace Presets, and Healthy Community Leaderboard
  */
 import React, { useState } from 'react';
 import { useApp } from '../context/AppContext';
@@ -15,18 +16,26 @@ import {
   CheckCircle2, 
   Clock, 
   Zap, 
-  Target,
-  Smile
+  Target, 
+  Calendar, 
+  Shield, 
+  Star, 
+  ChevronRight, 
+  Sunrise, 
+  Check 
 } from 'lucide-react';
 
 export const GamificationCenter: React.FC = () => {
-  const { gamification, addXP } = useApp();
+  const { gamification, addXP, checkInDailyStreak } = useApp();
   const [selectedPace, setSelectedPace] = useState<'super-busy' | 'moderate' | 'intensive'>('moderate');
+  const [hasCheckedInToday, setHasCheckedInToday] = useState<boolean>(false);
+  const [selectedRewardBadgeId, setSelectedRewardBadgeId] = useState<string>('b-streak-7');
+
   const [leaderboardUsers, setLeaderboardUsers] = useState([
     { rank: 1, name: 'Nurul Hidayati', level: 'Faris At-Tartil', xp: 1420, streak: 18, prayers: 42, isCurrentUser: false },
     { rank: 2, name: 'Anda (Santri)', level: gamification.levelTitle, xp: gamification.xp, streak: gamification.streakDays, prayers: 26, isCurrentUser: true },
     { rank: 3, name: 'Ahmad Faisal, S.T.', level: 'Mutsaqqaf Al-Quran', xp: 890, streak: 9, prayers: 31, isCurrentUser: false },
-    { rank: 4, name: 'dr. Sarah Nabila', level: 'Thalib Istana Memori', xp: 620, streak: 6, prayers: 19, isCurrentUser: false },
+    { rank: 4, name: 'dr. Sarah Nabila', level: 'Thalib Kota Memori', xp: 620, streak: 6, prayers: 19, isCurrentUser: false },
     { rank: 5, name: 'Bambang Trianto', level: 'Thalib Pemula', xp: 480, streak: 4, prayers: 15, isCurrentUser: false },
   ]);
 
@@ -45,11 +54,86 @@ export const GamificationCenter: React.FC = () => {
     addXP(10, `Mengirim doa Baraka untuk ${name}`);
   };
 
+  const handleManualCheckIn = () => {
+    checkInDailyStreak();
+    setHasCheckedInToday(true);
+  };
+
+  const handleCelebrateBadge = (badgeTitle: string) => {
+    confetti({
+      particleCount: 90,
+      spread: 75,
+      origin: { y: 0.55 }
+    });
+    addXP(15, `Merayakan ${badgeTitle}`);
+  };
+
   const nextLevelXP = gamification.level * 200;
   const currentLevelBaseXP = (gamification.level - 1) * 200;
   const xpInCurrentLevel = gamification.xp - currentLevelBaseXP;
   const xpNeeded = 200;
   const progressPercent = Math.min(100, Math.max(0, Math.round((xpInCurrentLevel / xpNeeded) * 100)));
+
+  // 7-Day Rolling Streak Week View
+  const daysOfWeek = [
+    { dayName: 'Sen', dayNumber: 1, label: 'Senin', ayahsDone: 3, isDone: gamification.streakDays >= 4 },
+    { dayName: 'Sel', dayNumber: 2, label: 'Selasa', ayahsDone: 3, isDone: gamification.streakDays >= 3 },
+    { dayName: 'Rab', dayNumber: 3, label: 'Rabu', ayahsDone: 2, isDone: gamification.streakDays >= 2 },
+    { dayName: 'Kam', dayNumber: 4, label: 'Kamis', ayahsDone: 4, isDone: gamification.streakDays >= 1 },
+    { dayName: 'Jum', dayNumber: 5, label: 'Jumat (Hari Ini)', ayahsDone: 2, isToday: true, isDone: true },
+    { dayName: 'Sab', dayNumber: 6, label: 'Sabtu', ayahsDone: 0, isFuture: true },
+    { dayName: 'Ahd', dayNumber: 7, label: 'Ahad', ayahsDone: 0, isFuture: true },
+  ];
+
+  // Consistency Streak Badges
+  const streakMilestoneBadges = [
+    {
+      id: 'b3',
+      title: 'Penjaga Subuh',
+      daysTarget: 3,
+      tier: 'Tingkat 1',
+      description: 'Konsisten setoran ba\'da subuh 3 hari berturut-turut',
+      rewardXP: 100,
+      isUnlocked: gamification.streakDays >= 3,
+      unlockedAt: '26 Okt 2026',
+      iconName: 'Sunrise'
+    },
+    {
+      id: 'b-streak-7',
+      title: 'Lencana Istiqomah Sepekan',
+      daysTarget: 7,
+      tier: 'Tingkat 2',
+      description: 'Konsisten hafalan 7 hari penuh tanpa memutus rantai memori',
+      rewardXP: 250,
+      isUnlocked: gamification.streakDays >= 7,
+      unlockedAt: gamification.streakDays >= 7 ? 'Baru saja' : undefined,
+      iconName: 'Flame'
+    },
+    {
+      id: 'b-streak-14',
+      title: 'Faris Al-Istiqomah',
+      daysTarget: 14,
+      tier: 'Tingkat 3',
+      description: 'Menjaga hafalan 14 hari berturut-turut di sela kesibukan kerja',
+      rewardXP: 500,
+      isUnlocked: gamification.streakDays >= 14,
+      unlockedAt: gamification.streakDays >= 14 ? 'Baru saja' : undefined,
+      iconName: 'Shield'
+    },
+    {
+      id: 'b-streak-30',
+      title: 'Penjaga Wahyu Bulanan',
+      daysTarget: 30,
+      tier: 'Tingkat Emas',
+      description: 'Mahkota konsistensi 30 hari penuh di Kota Memori Al-Quran',
+      rewardXP: 1000,
+      isUnlocked: gamification.streakDays >= 30,
+      unlockedAt: gamification.streakDays >= 30 ? 'Baru saja' : undefined,
+      iconName: 'Trophy'
+    }
+  ];
+
+  const activeRewardBadge = streakMilestoneBadges.find(b => b.id === selectedRewardBadgeId) || streakMilestoneBadges[1];
 
   return (
     <div className="space-y-6">
@@ -66,7 +150,7 @@ export const GamificationCenter: React.FC = () => {
             </h1>
             <p className="text-xs sm:text-sm text-amber-100 max-w-xl leading-relaxed">
               Didesain khusus untuk para profesional dan orang dewasa. Menjaga semangat belajar tanpa rasa terbebani, 
-              dengan perlindungan konsistensi harian dan pencapaian bertahap.
+              dengan pelacak konsistensi beruntun harian dan pencapaian bertahap.
             </p>
           </div>
 
@@ -86,7 +170,7 @@ export const GamificationCenter: React.FC = () => {
             <div className="text-center px-2">
               <div className="text-xs text-amber-200">Streak Harian</div>
               <div className="text-2xl font-bold font-mono text-amber-300 flex items-center justify-center gap-1">
-                <Flame className="w-5 h-5 fill-amber-400 text-amber-400" />
+                <Flame className="w-5 h-5 fill-amber-400 text-amber-400 animate-pulse" />
                 <span>{gamification.streakDays}</span>
               </div>
               <div className="text-[10px] text-amber-100">Hari Berturut</div>
@@ -105,6 +189,234 @@ export const GamificationCenter: React.FC = () => {
               className="bg-amber-300 h-2.5 rounded-full transition-all duration-500"
               style={{ width: `${progressPercent}%` }}
             />
+          </div>
+        </div>
+      </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* FEATURED: VISUAL CONSISTENCY STREAK COUNTER & REWARD BADGE HUB */}
+      {/* ------------------------------------------------------------------ */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl p-6 sm:p-7 border border-slate-200 dark:border-slate-800 shadow-sm space-y-6">
+        {/* Header of Consistency Streak */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-2xl bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 flex items-center justify-center font-bold relative shadow-xs">
+              <Flame className="w-6 h-6 fill-amber-500" />
+              <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-500 rounded-full ring-2 ring-white dark:ring-slate-900" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 text-xs font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                <span>Pelacak Konsistensi Menghafal</span>
+                <span aria-hidden="true">·</span>
+                <span>Consistency Streak</span>
+              </div>
+              <h2 className="text-xl sm:text-2xl font-extrabold text-slate-900 dark:text-white mt-0.5 flex items-center gap-2">
+                <span>{gamification.streakDays} Hari Berturut-turut</span>
+                <span className="text-xs px-2.5 py-0.5 rounded-full bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 font-bold">
+                  Aktif
+                </span>
+              </h2>
+            </div>
+          </div>
+
+          {/* Action: Check-in / Perpanjang Streak Hari Ini */}
+          <div className="flex items-center gap-2 self-start sm:self-auto">
+            <button
+              onClick={handleManualCheckIn}
+              disabled={hasCheckedInToday}
+              className={`px-4 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center gap-2 cursor-pointer shadow-sm ${
+                hasCheckedInToday
+                  ? 'bg-emerald-100 dark:bg-emerald-950 text-emerald-800 dark:text-emerald-300 cursor-default'
+                  : 'bg-emerald-600 hover:bg-emerald-500 active:scale-95 text-white shadow-emerald-500/20'
+              }`}
+            >
+              {hasCheckedInToday ? (
+                <>
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                  <span>Check-in Hari Ini Berhasil!</span>
+                </>
+              ) : (
+                <>
+                  <Sparkles className="w-4 h-4 text-amber-300" />
+                  <span>Check-in Hari Ini (+50 XP)</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {/* 7-Day Visual Week Streak Heatmap */}
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-xs">
+            <div className="font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1.5">
+              <Calendar className="w-4 h-4 text-emerald-600" />
+              <span>Kalender Mingguan Konsistensi (Target: 3 Ayat/Hari)</span>
+            </div>
+            <div className="text-slate-500 dark:text-slate-400">
+              Pelindung Hari Sibuk (Streak Freeze): <strong className="text-emerald-600 dark:text-emerald-400">2/2 Siap</strong>
+            </div>
+          </div>
+
+          {/* 7 Day Blocks Grid */}
+          <div className="grid grid-cols-7 gap-2 sm:gap-3">
+            {daysOfWeek.map((day, idx) => {
+              return (
+                <div
+                  key={day.dayName}
+                  className={`p-2.5 sm:p-3 rounded-xl border text-center transition-all flex flex-col items-center justify-between min-h-[92px] ${
+                    day.isToday
+                      ? 'border-amber-400 dark:border-amber-500 bg-amber-500/10 dark:bg-amber-950/30 ring-2 ring-amber-400/30 shadow-xs'
+                      : day.isDone
+                      ? 'border-emerald-200 dark:border-emerald-800/80 bg-emerald-50/50 dark:bg-emerald-950/20'
+                      : 'border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-850 opacity-60'
+                  }`}
+                >
+                  <span className={`text-[11px] font-bold ${
+                    day.isToday ? 'text-amber-800 dark:text-amber-300' : 'text-slate-600 dark:text-slate-400'
+                  }`}>
+                    {day.dayName}
+                  </span>
+
+                  <div className="my-1">
+                    {day.isDone ? (
+                      <div className="w-7 h-7 rounded-full bg-emerald-600 text-white flex items-center justify-center shadow-xs">
+                        <Flame className="w-4 h-4 fill-amber-300 text-amber-300" />
+                      </div>
+                    ) : (
+                      <div className="w-7 h-7 rounded-full border border-dashed border-slate-300 dark:border-slate-700 flex items-center justify-center text-[10px] text-slate-400">
+                        {idx + 1}
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="text-[10px] font-semibold text-slate-600 dark:text-slate-400">
+                    {day.isDone ? `${day.ayahsDone} Ayat` : '—'}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Featured Consistency Reward Badge Showcase */}
+        <div className="pt-2">
+          <div className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-3 flex items-center justify-between">
+            <div className="flex items-center gap-1.5">
+              <Award className="w-4 h-4 text-amber-500" />
+              <span>Lencana Penghargaan Konsistensi (Consistency Reward Badge)</span>
+            </div>
+            <span className="text-xs text-slate-500 font-normal">
+              Target berikutnya: {7 - Math.min(7, gamification.streakDays)} hari lagi menuju Lencana Sepekan
+            </span>
+          </div>
+
+          {/* Active Featured Badge Spotlight Card */}
+          <div className="p-5 sm:p-6 rounded-2xl bg-gradient-to-br from-amber-500/10 via-emerald-500/5 to-slate-50 dark:from-amber-950/30 dark:via-emerald-950/20 dark:to-slate-850 border border-amber-300 dark:border-amber-700/60 shadow-sm flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-5">
+              {/* Grand Badge Insignia */}
+              <div className="relative">
+                <div className={`w-20 h-20 rounded-2xl flex items-center justify-center shadow-lg transition-transform hover:scale-105 ${
+                  activeRewardBadge.isUnlocked
+                    ? 'bg-gradient-to-br from-amber-400 via-amber-500 to-amber-600 text-slate-950 shadow-amber-500/30 ring-4 ring-amber-300/40'
+                    : 'bg-gradient-to-br from-slate-200 to-slate-300 dark:from-slate-700 dark:to-slate-800 text-slate-400 ring-4 ring-slate-200 dark:ring-slate-700'
+                }`}>
+                  {activeRewardBadge.iconName === 'Sunrise' ? (
+                    <Sunrise className="w-10 h-10 text-white drop-shadow-md" />
+                  ) : activeRewardBadge.iconName === 'Flame' ? (
+                    <Flame className="w-10 h-10 fill-amber-100 text-white drop-shadow-md" />
+                  ) : activeRewardBadge.iconName === 'Shield' ? (
+                    <Shield className="w-10 h-10 text-white drop-shadow-md" />
+                  ) : (
+                    <Trophy className="w-10 h-10 text-white drop-shadow-md" />
+                  )}
+                </div>
+                {activeRewardBadge.isUnlocked && (
+                  <span className="absolute -bottom-2 -right-2 px-2 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-full shadow-xs flex items-center gap-0.5">
+                    <Check className="w-3 h-3" /> Diraih
+                  </span>
+                )}
+              </div>
+
+              {/* Badge Details */}
+              <div className="space-y-1">
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-bold text-amber-700 dark:text-amber-400 uppercase tracking-wider">
+                    {activeRewardBadge.tier} · Target {activeRewardBadge.daysTarget} Hari
+                  </span>
+                  <span className="text-slate-300 dark:text-slate-700">·</span>
+                  <span className="text-[11px] font-semibold text-emerald-600 dark:text-emerald-400">
+                    +{activeRewardBadge.rewardXP} XP Bonus
+                  </span>
+                </div>
+                <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                  {activeRewardBadge.title}
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 max-w-md leading-relaxed">
+                  {activeRewardBadge.description}
+                </p>
+                {activeRewardBadge.unlockedAt && (
+                  <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium pt-0.5">
+                    ✓ Dibuka pada: {activeRewardBadge.unlockedAt}
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Celebrate or Progress Trigger */}
+            <div className="flex items-center gap-2 shrink-0">
+              {activeRewardBadge.isUnlocked ? (
+                <button
+                  onClick={() => handleCelebrateBadge(activeRewardBadge.title)}
+                  className="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Sparkles className="w-4 h-4 text-slate-950" />
+                  <span>Rayakan Lencana Ini!</span>
+                </button>
+              ) : (
+                <div className="text-right">
+                  <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Progres: {gamification.streakDays}/{activeRewardBadge.daysTarget} Hari
+                  </div>
+                  <div className="w-32 bg-slate-200 dark:bg-slate-700 rounded-full h-2 mt-1.5 overflow-hidden">
+                    <div 
+                      className="bg-amber-500 h-2 rounded-full transition-all duration-500"
+                      style={{ width: `${Math.min(100, Math.round((gamification.streakDays / activeRewardBadge.daysTarget) * 100))}%` }}
+                    />
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Badge Milestone Selector Strip */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 mt-3">
+            {streakMilestoneBadges.map((badge) => {
+              const isSelected = selectedRewardBadgeId === badge.id;
+              return (
+                <button
+                  key={badge.id}
+                  onClick={() => setSelectedRewardBadgeId(badge.id)}
+                  className={`p-3 rounded-xl border text-left transition-all cursor-pointer ${
+                    isSelected
+                      ? 'border-amber-500 bg-amber-50/70 dark:bg-amber-950/40 text-amber-950 dark:text-amber-100 shadow-xs ring-1 ring-amber-500/40'
+                      : 'border-slate-200 dark:border-slate-800 hover:border-slate-300 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">{badge.tier}</span>
+                    <span className="text-[10px] font-mono text-emerald-600 dark:text-emerald-400 font-bold">
+                      {badge.daysTarget} Hari
+                    </span>
+                  </div>
+                  <div className="text-xs font-bold truncate">
+                    {badge.title}
+                  </div>
+                  <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    {badge.isUnlocked ? '✓ Terbuka' : `Kurang ${Math.max(0, badge.daysTarget - gamification.streakDays)} hari`}
+                  </div>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
@@ -136,7 +448,7 @@ export const GamificationCenter: React.FC = () => {
               1-2 Ayat / Hari
             </div>
             <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">
-              Ideal untuk eksekutif, dokter, atau pekerja shift. Cukup 1 titik Istana Memori sebelum tidur atau ba'da Subuh.
+              Ideal untuk eksekutif, dokter, atau pekerja shift. Cukup 1 titik Kota Memori sebelum tidur atau ba'da Subuh.
             </p>
           </button>
 
@@ -187,7 +499,7 @@ export const GamificationCenter: React.FC = () => {
         <div className="flex items-center justify-between pb-2 border-b border-slate-100 dark:border-slate-800">
           <div>
             <div className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-              Lencana & Medali Prestasi
+              Koleksi Seluruh Lencana & Medali Prestasi
             </div>
             <div className="text-xs text-slate-500">
               Apresiasi atas setiap langkah istiqomah Anda

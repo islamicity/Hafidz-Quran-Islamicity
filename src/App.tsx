@@ -66,7 +66,7 @@ const MainLayout: React.FC = () => {
                 Hafidz Quran Islamicity
               </span>
               <span aria-hidden="true">·</span>
-              <span>Berdasarkan Blueprint Istana Memori & Sistem Hafal Quran (SHQ)</span>
+              <span>Berdasarkan Blueprint Kota Memori & Sistem Hafal Quran (SHQ)</span>
             </div>
 
             <div className="flex items-center gap-4">

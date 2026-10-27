@@ -80,12 +80,12 @@ export const ExportReportsModal: React.FC = () => {
   // Google Slides presentation outline
   const slidesOutline = `
 # PRESENTASI LAPORAN MINGGUAN TAHFIDZ
-## Platform: Hafidz Quran Islamicity & Blueprint Istana Memori
+## Platform: Hafidz Quran Islamicity & Blueprint Kota Memori
 
 ---
 ### SLIDE 1: JUDUL & OVERVIEW
 - **Judul**: Laporan Perkembangan Hafalan Al-Quran Santri
-- **Metode**: Blueprint Istana Memori (Sistem Hafal Quran - SHQ)
+- **Metode**: Blueprint Kota Memori (Sistem Hafal Quran - SHQ)
 - **Periode**: Pekan Berjalan (${new Date().toLocaleDateString('id-ID', { month: 'long', year: 'numeric' })})
 - **Ringkasan**: Menghafal dengan pendekatan visual neuro-spasial ramah orang dewasa.
 
@@ -214,7 +214,7 @@ ${students.map((s, i) => `
                     Rapor Mingguan Tahfidz & Evaluasi Tajwid
                   </h3>
                   <div className="text-[11px] text-slate-500">
-                    Sistem Hafal Quran (SHQ) · Metode Blueprint Istana Memori
+                    Sistem Hafal Quran (SHQ) · Metode Blueprint Kota Memori
                   </div>
                 </div>
 

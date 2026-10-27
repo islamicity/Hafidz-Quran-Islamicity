@@ -47,7 +47,7 @@ export const HeroSection: React.FC = () => {
         <div className="flex items-center gap-2 text-xs font-medium text-emerald-400 mb-3">
           <span>Sistem Hafal Quran (SHQ)</span>
           <span aria-hidden="true">·</span>
-          <span>Blueprint Istana Memori</span>
+          <span>Blueprint Kota Memori</span>
           <span aria-hidden="true">·</span>
           <span>Khusus Dewasa & Profesional</span>
         </div>
@@ -58,7 +58,7 @@ export const HeroSection: React.FC = () => {
         </h1>
 
         <p className="text-sm sm:text-base text-slate-300 max-w-2xl mb-6 leading-relaxed">
-          Menggabungkan kearifan sanad tajwid dengan kekuatan metode visual <em>Memory Palace</em> (Istana Memori). 
+          Menggabungkan kearifan sanad tajwid dengan kekuatan metode visual <em>Memory City</em> (Kota Memori). 
           Bebas rasa lupa, dirancang spesifik untuk orang dewasa dengan waktu terbatas 10-15 menit sehari.
         </p>
 
@@ -69,7 +69,7 @@ export const HeroSection: React.FC = () => {
             className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs sm:text-sm font-semibold rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer"
           >
             <Sparkles className="w-4 h-4 text-amber-300" />
-            <span>Mulai Istana Memori Surah Al-Mulk</span>
+            <span>Mulai Kota Memori Surah Al-Mulk</span>
             <ArrowRight className="w-4 h-4" />
           </button>
 

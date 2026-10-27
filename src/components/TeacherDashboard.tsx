@@ -211,7 +211,7 @@ export const TeacherDashboard: React.FC = () => {
               </div>
               <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
                 Santri telah merekam bacaan melalui modul Tajwid AI dengan skor makhraj {currentStudent.tajweedScore}%.
-                Sebagai mentor, Anda dapat menyetujui atau meminta penguatan mental walk istana memori.
+                Sebagai mentor, Anda dapat menyetujui atau meminta penguatan mental walk kota memori.
               </p>
               <div className="flex items-center gap-2 pt-2">
                 <button

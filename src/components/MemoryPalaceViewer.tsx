@@ -1,6 +1,6 @@
 /**
- * Blueprint Istana Memori Component
- * Based on "Blueprint Istana Memori: Mulai Menghafal di Hari Pertama" & "Sistem Hafal Quran (SHQ)"
+ * Blueprint Kota Memori Component
+ * Based on "Blueprint Kota Memori: Mulai Menghafal di Hari Pertama" & "Sistem Hafal Quran (SHQ)"
  * Features 5 Guided Stages, Interactive Loci Walkthrough, and Gemini AI Loci Generator
  */
 import React, { useState } from 'react';
@@ -58,7 +58,7 @@ export const MemoryPalaceViewer: React.FC = () => {
       setActiveLocusIndex(prev => prev + 1);
       addXP(10, `Menelusuri Loci ${activeLocusIndex + 2}`);
     } else {
-      addXP(50, `Menyelesaikan Mental Walk Istana Memori`);
+      addXP(50, `Menyelesaikan Mental Walk Kota Memori`);
     }
   };
 
@@ -95,7 +95,7 @@ export const MemoryPalaceViewer: React.FC = () => {
         <div className="absolute right-0 top-0 bottom-0 w-full md:w-1/2 opacity-30 md:opacity-40">
           <img
             src="/src/assets/images/istana_memori_blueprint_1793052760582.jpg"
-            alt="Blueprint Istana Memori Courtyard"
+            alt="Blueprint Kota Memori Courtyard"
             className="w-full h-full object-cover object-center"
             referrerPolicy="no-referrer"
           />
@@ -104,13 +104,13 @@ export const MemoryPalaceViewer: React.FC = () => {
 
         <div className="relative z-10 p-6 sm:p-8 max-w-2xl">
           <div className="flex items-center gap-2 text-xs font-semibold text-amber-400 mb-2">
-            <span>Metode Blueprint Istana Memori</span>
+            <span>Metode Blueprint Kota Memori</span>
             <span aria-hidden="true">·</span>
             <span>Mulai Menghafal di Hari Pertama</span>
           </div>
 
           <h1 className="text-2xl sm:text-3xl font-extrabold tracking-tight text-white mb-2 text-balance">
-            Istana Memori: Rahasia Menghafal Cepat & Anti-Lupa bagi Orang Dewasa
+            Kota Memori: Rahasia Menghafal Cepat & Anti-Lupa bagi Orang Dewasa
           </h1>
 
           <p className="text-xs sm:text-sm text-slate-300 leading-relaxed mb-4">
@@ -147,7 +147,7 @@ export const MemoryPalaceViewer: React.FC = () => {
       <div className="bg-white dark:bg-slate-900 rounded-xl p-4 border border-slate-200 dark:border-slate-800 shadow-sm">
         <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-100 dark:border-slate-800">
           <div className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-            5 Tahapan Blueprint Istana Memori
+            5 Tahapan Blueprint Kota Memori
           </div>
           <div className="text-xs text-slate-500">
             Panduan Langkah demi Langkah
@@ -222,7 +222,7 @@ export const MemoryPalaceViewer: React.FC = () => {
           <div className="flex items-center justify-between">
             <div>
               <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider">
-                Pilih Istana Memori
+                Pilih Kota Memori
               </div>
               <h3 className="text-base font-bold text-slate-900 dark:text-white">
                 {activeRoom.roomName}
@@ -377,7 +377,7 @@ export const MemoryPalaceViewer: React.FC = () => {
                 <div className="py-2 text-right min-h-[60px] flex items-center justify-end">
                   {testHideArabic ? (
                     <div className="w-full text-center py-4 bg-slate-200/50 dark:bg-slate-700/50 rounded-lg text-xs text-slate-500 italic">
-                      [Teks Arab ditutup untuk menguji visualisasi Istana Memori Anda. Coba lafalkan dari ingatan visual!]
+                      [Teks Arab ditutup untuk menguji visualisasi Kota Memori Anda. Coba lafalkan dari ingatan visual!]
                     </div>
                   ) : (
                     <p dir="rtl" className="font-quran text-2xl sm:text-3xl text-slate-900 dark:text-white leading-loose">
@@ -425,7 +425,7 @@ export const MemoryPalaceViewer: React.FC = () => {
             <div className="flex items-center justify-between">
               <div className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <Wand2 className="w-4 h-4 text-emerald-600" />
-                <span>AI Istana Memori: Buat Jangkar Khusus Ruangan Anda</span>
+                <span>AI Kota Memori: Buat Jangkar Khusus Ruangan & Bangunan Anda</span>
               </div>
               <span className="text-[11px] text-slate-400">Gemini 3.8 Flash</span>
             </div>
