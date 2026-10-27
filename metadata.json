@@ -1,0 +1,6 @@
+{
+  "name": "Hafidz Quran Islamicity",
+  "description": "Platform superaplikasi cerdas pelacak hafalan Al-Quran, analisis tajwid AI, blueprint istana memori, dashboard mentor real-time, dan gamifikasi terpadu.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
