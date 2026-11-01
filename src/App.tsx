@@ -12,6 +12,7 @@ import { TajweedAnalyzer } from './components/TajweedAnalyzer';
 import { TeacherDashboard } from './components/TeacherDashboard';
 import { GamificationCenter } from './components/GamificationCenter';
 import { CommunityForum } from './components/CommunityForum';
+import { ThinkQuran } from './components/ThinkQuran';
 import { ExportReportsModal } from './components/ExportReportsModal';
 import { SyncBackupModal } from './components/SyncBackupModal';
 import { ReminderModal } from './components/ReminderModal';
@@ -50,6 +51,7 @@ const MainLayout: React.FC = () => {
           </div>
         )}
 
+        {activeTab === 'thinkquran' && <ThinkQuran />}
         {activeTab === 'palace' && <MemoryPalaceViewer />}
         {activeTab === 'tajweed' && <TajweedAnalyzer />}
         {activeTab === 'teacher' && <TeacherDashboard />}

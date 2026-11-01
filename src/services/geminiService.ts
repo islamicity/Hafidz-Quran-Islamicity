@@ -375,3 +375,79 @@ function generateHeuristicWordGuide(word: string) {
   };
 }
 
+/**
+ * Generate deep Tadabbur & Life Reflection using Gemini 3.8 Flash
+ * "Think Quran: Temukan Apa yang Sedang Disampaikan Allah SWT melalui Al-Quran-Nya kepada kita"
+ */
+export async function generateTadabburReflection(
+  surahName: string,
+  ayahNumber: number,
+  ayahArabic: string,
+  translation: string,
+  userLifeSituation?: string
+): Promise<{
+  divineMessage: string;
+  dailyLifeContext: string;
+  soulReflectionPrompt: string;
+  actionableStep: string;
+  heartfeltPrayer: string;
+}> {
+  const ai = getGenAIClient();
+
+  if (ai) {
+    try {
+      const prompt = `
+Anda adalah Guru Tadabbur Al-Quran berwawasan mendalam dan santun pada fitur 'Think Quran' di platform Hafidz Quran Islamicity.
+Misi:
+"Temukan Apa yang Sedang Disampaikan Allah SWT melalui Al-Quran-Nya kepada kita.
+Pahami lebih banyak dari apa yang kita baca.
+Lihat kehidupan sehari-hari melalui petunjuk al-Quran.
+Bangun hubungan yang lebih dekat dengan Allah SWT melalui reflection.
+Rasakan Sebuah Reflection.
+Terkadang, Satu Ayat Mengubah Segalanya.
+Al-Quran bukan sekadar untuk dibaca tetapi juga dipahami. Ia adalah petunjuk Allah SWT bagi kehidupan kita."
+
+Target Ayat:
+Surah: ${surahName} (Ayat ${ayahNumber})
+Lafaz Arab: ${ayahArabic}
+Artinya: ${translation}
+Situasi Hidup / Perasaan Pengguna: ${userLifeSituation || 'Menghadapi kesibukan harian, mencari ketenangan dan petunjuk hidup.'}
+
+Hasilkan refleksi tadabbur yang menyentuh sanubari, relevan untuk orang dewasa modern, dan praktis, dalam format JSON murni tanpa markdown (tanpa \`\`\`json):
+{
+  "divineMessage": "<Apa yang sedang disampaikan Allah SWT secara intim dan penuh kasih kepada hamba-Nya melalui ayat ini (2-3 kalimat hangat)>",
+  "dailyLifeContext": "<Bagaimana melihat situasi kehidupan sehari-hari (pekerjaan, keluarga, tekanan batin) melalui kacamata ayat ini>",
+  "soulReflectionPrompt": "<Satu pertanyaan reflektif mendalam untuk muhasabah diri yang menggetarkan hati>",
+  "actionableStep": "<Satu amalan atau tindakan praktis konkret yang dapat dilakukan dalam 24 jam ke depan>",
+  "heartfeltPrayer": "<Doa pendek yang tulus dan menyentuh dari kedalaman hati berdasarkan ayat ini>"
+}
+`;
+      const response = await ai.models.generateContent({
+        model: 'gemini-3.8-flash',
+        contents: prompt,
+        config: {
+          responseMimeType: 'application/json',
+          temperature: 0.5
+        }
+      });
+      const parsed = JSON.parse(response.text?.trim() || '{}');
+      if (parsed.divineMessage && parsed.actionableStep) {
+        return parsed;
+      }
+    } catch (err) {
+      console.warn('Gemini Tadabbur generation fallback:', err);
+    }
+  }
+
+  // Empathetic, soul-stirring offline heuristic fallback
+  return {
+    divineMessage: `Melalui Surah ${surahName} ayat ${ayahNumber}, Allah SWT mengingatkan bahwa setiap tarikan nafas dan detak jantungmu berada dalam liputan kasih sayang dan pemeliharaan-Nya yang sempurna. Tidak ada satu pun kepedihan atau usaha kecilmu yang luput dari pandangan-Nya.`,
+    dailyLifeContext: userLifeSituation 
+      ? `Terkait apa yang sedang kamu rasakan ("${userLifeSituation}"), ayat ini hadir sebagai cermin jernih: ujian bukanlah hukuman, melainkan undangan lembut dari Allah agar kamu melepaskan ketergantungan pada kekuatan makhluk dan kembali bersandar pada Rabb Semesta Alam.`
+      : `Di tengah hiruk-pikuk rutinitas dan target kerja harian, ayat ini mengingatkan kita untuk tidak kehilangan arah tujuan sejati. Kualitas ketulusan hati kita di hadapan Allah jauh lebih berharga daripada seluruh pencapaian fana dunia.`,
+    soulReflectionPrompt: `Jika Allah SWT sedang berbisik kepadamu secara pribadi lewat ayat ini saat ini juga, bagian mana dari hidupmu yang paling perlu kamu benahi dengan penuh keikhlasan?`,
+    actionableStep: `Luangkan waktu 5 menit dalam hening setelah shalat berikutnya. Baca kembali terjemahan ayat ini perlahan, lalu beristighfar 33 kali sambil melepaskan beban yang menyesakkan dada.`,
+    heartfeltPrayer: `Ya Allah, jadikan Al-Quran sebagai penyejuk hatiku, cahaya dadaku, pelenyap kesedihanku, dan penghilang kegelisahanku. Tuntunlah setiap langkahku dengan petunjuk-Mu.`
+  };
+}
+

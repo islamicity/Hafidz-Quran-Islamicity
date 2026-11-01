@@ -11,12 +11,15 @@ import {
   ForumPost, 
   DailyReminderConfig, 
   AppLanguage, 
-  AppTheme 
+  AppTheme,
+  UserPersonalReflection,
+  DailyMemorizationTarget,
+  DailyTargetType
 } from '../types';
 
 interface AppContextType {
-  activeTab: 'tracker' | 'palace' | 'tajweed' | 'teacher' | 'gamification' | 'community';
-  setActiveTab: (tab: 'tracker' | 'palace' | 'tajweed' | 'teacher' | 'gamification' | 'community') => void;
+  activeTab: 'thinkquran' | 'tracker' | 'palace' | 'tajweed' | 'teacher' | 'gamification' | 'community';
+  setActiveTab: (tab: 'thinkquran' | 'tracker' | 'palace' | 'tajweed' | 'teacher' | 'gamification' | 'community') => void;
   selectedSurah: number;
   setSelectedSurah: (surahNumber: number) => void;
   selectedAyah: number;
@@ -24,6 +27,9 @@ interface AppContextType {
   userProgress: Record<string, UserAyahProgress>;
   updateAyahStatus: (surah: number, ayah: number, status: MemorizationStatus, tajweedScore?: number) => void;
   getAyahStatus: (surah: number, ayah: number) => MemorizationStatus;
+  dailyTarget: DailyMemorizationTarget;
+  updateDailyTarget: (newTarget: Partial<DailyMemorizationTarget>) => void;
+  resetDailyTargetProgress: () => void;
   gamification: GamificationState;
   addXP: (amount: number, reason?: string) => void;
   theme: AppTheme;
@@ -58,6 +64,13 @@ interface AppContextType {
   isFocusMode: boolean;
   setIsFocusMode: (val: boolean) => void;
   checkInDailyStreak: () => void;
+  savedReflections: UserPersonalReflection[];
+  saveUserReflection: (reflection: Omit<UserPersonalReflection, 'id' | 'createdAt'>) => void;
+  deleteUserReflection: (id: string) => void;
+  toggleFavoriteReflection: (id: string) => void;
+  activeReflectionAyah: { surahNumber: number; ayahNumber: number } | null;
+  setActiveReflectionAyah: (val: { surahNumber: number; ayahNumber: number } | null) => void;
+  openReflectionForAyah: (surahNumber: number, ayahNumber: number) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -69,7 +82,20 @@ const STORAGE_KEYS = {
   FORUM: 'hafidz_forum_v2',
   REMINDERS: 'hafidz_reminders_v2',
   SETTINGS: 'hafidz_settings_v2',
-  SYNC_TOKEN: 'hafidz_sync_token_v2'
+  SYNC_TOKEN: 'hafidz_sync_token_v2',
+  REFLECTIONS: 'hafidz_reflections_v2',
+  DAILY_TARGET: 'hafidz_daily_target_v2'
+};
+
+const DEFAULT_DAILY_TARGET: DailyMemorizationTarget = {
+  targetType: 'ayah_count',
+  targetAyahCount: 5,
+  targetSurahNumber: 67,
+  targetSurahName: 'Al-Mulk',
+  targetSurahAyahRange: { from: 1, to: 5 },
+  dailyGoalMode: 'all',
+  lastTargetDate: new Date().toISOString().split('T')[0],
+  completedAyahKeys: ['67_1', '67_2']
 };
 
 const DEFAULT_GAMIFICATION: GamificationState = {
@@ -222,10 +248,47 @@ const DEFAULT_REMINDERS: DailyReminderConfig[] = [
   }
 ];
 
+const DEFAULT_SAVED_REFLECTIONS: UserPersonalReflection[] = [
+  {
+    id: 'ref-default-1',
+    ayahRef: 'Al-Insyirah: 5',
+    surahNumber: 94,
+    ayahNumber: 5,
+    userLifeSituation: 'Merasa kelelahan dengan target kerjaan akhir bulan dan waktu untuk keluarga yang berkurang.',
+    reflectionNote: 'Allah mengingatkan bahwa jalan keluar diciptakan berdampingan dengan masalah ini. Saya tidak boleh merasa buntu. Bersyukur atas pekerjaan ini, dan mengatur ritme dengan lebih tenang.',
+    actionCommitment: 'Mematikan laptop tepat pukul 18:00 untuk shalat Maghrib berjamaah dan mendengarkan cerita anak.',
+    createdAt: '2026-10-31',
+    moodTag: 'tenang',
+    isFavorite: true
+  },
+  {
+    id: 'ref-default-2',
+    ayahRef: 'Al-Mulk: 2',
+    surahNumber: 67,
+    ayahNumber: 2,
+    userLifeSituation: 'Sering membandingkan diri dengan pencapaian teman di media sosial dan merasa tertinggal.',
+    reflectionNote: 'Allah menguji siapa yang "terbaik mutunya" (Ahsanu \'amala), bukan yang terbanyak pameran dunianya. Ketenangan hadir saat fokus pada keikhlasan diri sendiri.',
+    actionCommitment: 'Mengurangi buka sosmed sebelum tidur dan menggantinya dengan 5 menit muraja\'ah Al-Mulk.',
+    createdAt: '2026-10-29',
+    moodTag: 'insyaf',
+    isFavorite: true
+  }
+];
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [activeTab, setActiveTab] = useState<'tracker' | 'palace' | 'tajweed' | 'teacher' | 'gamification' | 'community'>('tracker');
+  const [activeTab, setActiveTab] = useState<'thinkquran' | 'tracker' | 'palace' | 'tajweed' | 'teacher' | 'gamification' | 'community'>('tracker');
   const [selectedSurah, setSelectedSurah] = useState<number>(67); // Default to Al-Mulk
   const [selectedAyah, setSelectedAyah] = useState<number>(1);
+  const [activeReflectionAyah, setActiveReflectionAyah] = useState<{ surahNumber: number; ayahNumber: number } | null>(null);
+  const [savedReflections, setSavedReflections] = useState<UserPersonalReflection[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.REFLECTIONS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn(e);
+    }
+    return DEFAULT_SAVED_REFLECTIONS;
+  });
   const [theme, setTheme] = useState<AppTheme>('light');
   const [language, setLanguage] = useState<AppLanguage>('id');
   const [fontSize, setFontSize] = useState<'normal' | 'large' | 'huge'>('normal');
@@ -276,6 +339,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.warn(e);
     }
     return DEFAULT_GAMIFICATION;
+  });
+
+  // Daily Memorization Target state
+  const [dailyTarget, setDailyTarget] = useState<DailyMemorizationTarget>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.DAILY_TARGET);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const today = new Date().toISOString().split('T')[0];
+        // If stored data was from previous day, refresh today's completed keys
+        if (parsed.lastTargetDate !== today) {
+          return {
+            ...parsed,
+            lastTargetDate: today,
+            completedAyahKeys: []
+          };
+        }
+        return parsed;
+      }
+    } catch (e) {
+      console.warn(e);
+    }
+    return DEFAULT_DAILY_TARGET;
   });
 
   // Students roster
@@ -372,6 +458,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [reminders]);
 
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.REFLECTIONS, JSON.stringify(savedReflections));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [savedReflections]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEYS.DAILY_TARGET, JSON.stringify(dailyTarget));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [dailyTarget]);
+
   // Apply dark mode class to html element
   useEffect(() => {
     const root = document.documentElement;
@@ -464,6 +566,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     addXP(50, 'Check-in Konsistensi Menghafal');
   };
 
+  // Update Daily Target configuration
+  const updateDailyTarget = (newTarget: Partial<DailyMemorizationTarget>) => {
+    setDailyTarget(prev => {
+      const updated = { ...prev, ...newTarget };
+      if (newTarget.targetAyahCount !== undefined) {
+        setGamification(g => ({ ...g, dailyGoalAyahs: newTarget.targetAyahCount! }));
+      }
+      return updated;
+    });
+  };
+
+  // Reset today's target progress
+  const resetDailyTargetProgress = () => {
+    setDailyTarget(prev => ({
+      ...prev,
+      completedAyahKeys: []
+    }));
+    setGamification(g => ({
+      ...g,
+      todayCompletedAyahs: 0
+    }));
+    setNotificationBanner('Progres target hari ini telah direset.');
+  };
+
   // Update Ayah memorization status
   const updateAyahStatus = (surah: number, ayah: number, status: MemorizationStatus, tajweedScore?: number) => {
     const key = `${surah}_${ayah}`;
@@ -498,13 +624,56 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       };
     });
 
+    // Register into daily target progress if not 'unlearned'
+    if (status !== 'unlearned') {
+      setDailyTarget(prev => {
+        const today = new Date().toISOString().split('T')[0];
+        const isNewDay = prev.lastTargetDate !== today;
+        const currentKeys = isNewDay ? [] : prev.completedAyahKeys;
+
+        // Check if surah matches when in surah target mode
+        const matchesSurah = prev.targetType !== 'surah' || (prev.targetSurahNumber === undefined || prev.targetSurahNumber === surah);
+
+        // Check if status matches dailyGoalMode
+        const matchesMode = prev.dailyGoalMode === 'all' || 
+          (prev.dailyGoalMode === 'mutqin' && status === 'mutqin') ||
+          (prev.dailyGoalMode === 'memorizing' && (status === 'memorizing' || status === 'mutqin'));
+
+        if (matchesSurah && matchesMode && !currentKeys.includes(key)) {
+          const updatedKeys = [...currentKeys, key];
+          const targetCount = prev.targetAyahCount;
+
+          setGamification(g => ({
+            ...g,
+            todayCompletedAyahs: updatedKeys.length
+          }));
+
+          // Trigger target completed celebration if just reached
+          if (updatedKeys.length === targetCount) {
+            confetti({
+              particleCount: 100,
+              spread: 80,
+              origin: { y: 0.55 }
+            });
+            addXP(60, `Target Harian ${targetCount} Ayat Tercapai!`);
+            if (!isFocusMode) {
+              setNotificationBanner(`🎉 Alhamdulillah! Target harian ${targetCount} ayat hari ini tercapai dengan istiqomah! (+60 XP Bonus)`);
+            }
+          }
+
+          return {
+            ...prev,
+            lastTargetDate: today,
+            completedAyahKeys: updatedKeys
+          };
+        }
+        return isNewDay ? { ...prev, lastTargetDate: today, completedAyahKeys: [] } : prev;
+      });
+    }
+
     // Reward XP
     if (status === 'mutqin') {
       addXP(50, `Ayat ${ayah} ditandai Mutqin`);
-      setGamification(g => ({
-        ...g,
-        todayCompletedAyahs: g.todayCompletedAyahs + 1
-      }));
     } else if (status === 'memorizing') {
       addXP(20, `Memulai hafalan Ayat ${ayah}`);
     } else if (status === 'reviewing') {
@@ -603,6 +772,40 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setNotificationBanner(null);
   };
 
+  const saveUserReflection = (reflectionData: Omit<UserPersonalReflection, 'id' | 'createdAt'>) => {
+    const newReflection: UserPersonalReflection = {
+      ...reflectionData,
+      id: 'ref-' + Date.now(),
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    setSavedReflections(prev => [newReflection, ...prev]);
+    addXP(40, 'Mencatat Jurnal Refleksi Think Quran');
+    confetti({
+      particleCount: 60,
+      spread: 60,
+      origin: { y: 0.7 }
+    });
+    if (!isFocusMode) {
+      setNotificationBanner('Refleksi hati Anda telah tersimpan dengan aman ke Jurnal Pribadi.');
+    }
+  };
+
+  const deleteUserReflection = (id: string) => {
+    setSavedReflections(prev => prev.filter(r => r.id !== id));
+  };
+
+  const toggleFavoriteReflection = (id: string) => {
+    setSavedReflections(prev => prev.map(r => r.id === id ? { ...r, isFavorite: !r.isFavorite } : r));
+  };
+
+  const openReflectionForAyah = (surahNumber: number, ayahNumber: number) => {
+    setActiveReflectionAyah({ surahNumber, ayahNumber });
+    setSelectedSurah(surahNumber);
+    setSelectedAyah(ayahNumber);
+    setActiveTab('thinkquran');
+    if (isFocusMode) setIsFocusMode(false);
+  };
+
   return (
     <AppContext.Provider value={{
       activeTab,
@@ -614,6 +817,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       userProgress,
       updateAyahStatus,
       getAyahStatus,
+      dailyTarget,
+      updateDailyTarget,
+      resetDailyTargetProgress,
       gamification,
       addXP,
       theme,
@@ -647,7 +853,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       setShowReminderModal,
       isFocusMode,
       setIsFocusMode,
-      checkInDailyStreak
+      checkInDailyStreak,
+      savedReflections,
+      saveUserReflection,
+      deleteUserReflection,
+      toggleFavoriteReflection,
+      activeReflectionAyah,
+      setActiveReflectionAyah,
+      openReflectionForAyah
     }}>
       {children}
     </AppContext.Provider>

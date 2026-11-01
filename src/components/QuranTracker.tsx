@@ -6,7 +6,7 @@
 import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useApp } from '../context/AppContext';
 import { SURAH_LIST, getAyahsForSurah } from '../data/quranData';
-import { Ayah, MemorizationStatus, WordPronunciationGuide } from '../types';
+import { Ayah, MemorizationStatus, WordPronunciationGuide, DailyTargetType } from '../types';
 import { playWordSpeech, getWordPronunciationGuide } from '../services/geminiService';
 import { 
   Search, 
@@ -34,7 +34,15 @@ import {
   ArrowRight, 
   Lightbulb,
   X,
-  Headphones
+  Headphones,
+  Compass,
+  Target,
+  Settings2,
+  Award,
+  Zap,
+  Calendar,
+  Flame,
+  TrendingUp
 } from 'lucide-react';
 
 export const QuranTracker: React.FC = () => {
@@ -45,11 +53,15 @@ export const QuranTracker: React.FC = () => {
     setSelectedAyah, 
     updateAyahStatus, 
     getAyahStatus, 
+    dailyTarget,
+    updateDailyTarget,
+    resetDailyTargetProgress,
     userProgress, 
     setActiveTab, 
     fontSize,
     isFocusMode,
-    setIsFocusMode 
+    setIsFocusMode,
+    openReflectionForAyah
   } = useApp();
 
   const [searchQuery, setSearchQuery] = useState('');
@@ -58,6 +70,14 @@ export const QuranTracker: React.FC = () => {
   const [playingAudioUrl, setPlayingAudioUrl] = useState<string | null>(null);
   const [audioPlaybackRate, setAudioPlaybackRate] = useState<number>(1);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Daily Memorization Target Configuration Modal States
+  const [showTargetModal, setShowTargetModal] = useState<boolean>(false);
+  const [tempTargetType, setTempTargetType] = useState<DailyTargetType>(dailyTarget.targetType || 'ayah_count');
+  const [tempTargetAyahCount, setTempTargetAyahCount] = useState<number>(dailyTarget.targetAyahCount || 5);
+  const [tempTargetSurahNumber, setTempTargetSurahNumber] = useState<number>(dailyTarget.targetSurahNumber || 67);
+  const [tempGoalMode, setTempGoalMode] = useState<'all' | 'memorizing' | 'mutqin'>(dailyTarget.dailyGoalMode || 'all');
+  const [customAyahInput, setCustomAyahInput] = useState<string>(String(dailyTarget.targetAyahCount || 5));
 
   // Focus Mode Specific States
   const [focusRepeatLimit, setFocusRepeatLimit] = useState<number | 'infinite'>(3);
@@ -275,6 +295,55 @@ export const QuranTracker: React.FC = () => {
   const surahMutqinCount = ayahs.filter(a => getAyahStatus(selectedSurah, a.numberInSurah) === 'mutqin').length;
   const surahProgressPct = Math.round((surahMutqinCount / (ayahs.length || 1)) * 100);
 
+  // Daily Memorization Target calculations
+  const targetCount = dailyTarget.targetAyahCount || 5;
+  const completedKeys = dailyTarget.completedAyahKeys || [];
+  const completedCount = completedKeys.length;
+  const targetProgressPct = Math.min(100, Math.round((completedCount / Math.max(1, targetCount)) * 100));
+  const isTargetAchieved = completedCount >= targetCount;
+  const remainingTargetCount = Math.max(0, targetCount - completedCount);
+
+  // Status breakdown of today's target completions
+  const todayProgressStats = useMemo(() => {
+    let memorizingCount = 0;
+    let reviewingCount = 0;
+    let mutqinCount = 0;
+
+    completedKeys.forEach(k => {
+      const status = userProgress[k]?.status;
+      if (status === 'mutqin') mutqinCount++;
+      else if (status === 'reviewing') reviewingCount++;
+      else if (status === 'memorizing') memorizingCount++;
+      else mutqinCount++; // default completed
+    });
+
+    return { memorizingCount, reviewingCount, mutqinCount };
+  }, [completedKeys, userProgress]);
+
+  const openTargetModal = () => {
+    setTempTargetType(dailyTarget.targetType || 'ayah_count');
+    setTempTargetAyahCount(dailyTarget.targetAyahCount || 5);
+    setTempTargetSurahNumber(dailyTarget.targetSurahNumber || selectedSurah || 67);
+    setTempGoalMode(dailyTarget.dailyGoalMode || 'all');
+    setCustomAyahInput(String(dailyTarget.targetAyahCount || 5));
+    setShowTargetModal(true);
+  };
+
+  const handleSaveTarget = () => {
+    const parsedCustom = parseInt(customAyahInput);
+    const finalCount = (!isNaN(parsedCustom) && parsedCustom > 0) ? parsedCustom : tempTargetAyahCount;
+    const targetSurahMeta = SURAH_LIST.find(s => s.number === tempTargetSurahNumber);
+
+    updateDailyTarget({
+      targetType: tempTargetType,
+      targetAyahCount: finalCount,
+      targetSurahNumber: tempTargetSurahNumber,
+      targetSurahName: targetSurahMeta?.nameLatin,
+      dailyGoalMode: tempGoalMode
+    });
+    setShowTargetModal(false);
+  };
+
   // Font class mapping
   const arabicTextSizeClass = fontSize === 'huge' ? 'text-4xl' : fontSize === 'large' ? 'text-3xl' : 'text-2xl';
 
@@ -311,6 +380,32 @@ export const QuranTracker: React.FC = () => {
                 {activeSurahMeta.nameLatin} · Ayat {focusedAyah.numberInSurah} dari {ayahs.length}
               </h2>
             </div>
+          </div>
+
+          {/* Compact Daily Target Indicator in Focus Mode Header */}
+          <div className="hidden lg:flex items-center gap-3 px-3.5 py-2 rounded-xl bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/80">
+            <div className="w-7 h-7 rounded-lg bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+              <Target className="w-4 h-4" />
+            </div>
+            <div className="flex flex-col min-w-[130px]">
+              <div className="flex items-center justify-between text-[11px] font-semibold text-slate-700 dark:text-slate-300">
+                <span>Target Hari Ini</span>
+                <span className="text-emerald-600 dark:text-emerald-400 font-mono">{completedCount}/{targetCount}</span>
+              </div>
+              <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-1.5 mt-1 overflow-hidden">
+                <div 
+                  className="bg-emerald-500 h-1.5 rounded-full transition-all duration-500" 
+                  style={{ width: `${targetProgressPct}%` }}
+                />
+              </div>
+            </div>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded ${
+              isTargetAchieved 
+                ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300' 
+                : 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+            }`}>
+              {isTargetAchieved ? 'Tercapai 🎉' : `${targetProgressPct}%`}
+            </span>
           </div>
 
           {/* Surah Switcher & Exit Focus Button */}
@@ -796,6 +891,15 @@ export const QuranTracker: React.FC = () => {
                 <Check className="w-3.5 h-3.5" />
                 <span>Mutqin (Lancar)</span>
               </button>
+
+              <button
+                onClick={() => openReflectionForAyah(selectedSurah, focusedAyah.numberInSurah)}
+                className="px-3 py-1 text-xs rounded-lg font-semibold bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors flex items-center gap-1.5 cursor-pointer border border-amber-200 dark:border-amber-800/60"
+                title="Buka Tadabbur & Refleksi Ayat di Think Quran"
+              >
+                <Compass className="w-3.5 h-3.5 text-amber-500" />
+                <span>Think Quran</span>
+              </button>
             </div>
           </div>
         </div>
@@ -871,6 +975,216 @@ export const QuranTracker: React.FC = () => {
             <Maximize2 className="w-3.5 h-3.5" />
             <span>Mode Fokus</span>
           </button>
+        </div>
+      </div>
+
+      {/* Visual Daily Target & Memorization Progress Tracker Card */}
+      <div className="bg-white dark:bg-slate-900 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm p-5 sm:p-6 relative overflow-hidden space-y-5">
+        {/* Subtle Ambient Background Gradient */}
+        <div className="absolute top-0 right-0 w-80 h-40 bg-radial from-emerald-500/10 via-teal-500/5 to-transparent pointer-events-none rounded-bl-full" />
+
+        {/* Header row: Title, Type Badge & Controls */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-start sm:items-center gap-3.5">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-600/15 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center font-bold shrink-0 shadow-xs">
+              <Target className="w-6 h-6" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white tracking-tight">
+                  Target Hafalan Harian
+                </h3>
+                <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${
+                  dailyTarget.targetType === 'surah'
+                    ? 'bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border-teal-200 dark:border-teal-800/60'
+                    : 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60'
+                }`}>
+                  {dailyTarget.targetType === 'surah' 
+                    ? `Fokus Surat: ${dailyTarget.targetSurahName || activeSurahMeta.nameLatin} (${targetCount} Ayat)`
+                    : `Mode Jumlah: ${targetCount} Ayat / Hari`}
+                </span>
+                {isTargetAchieved && (
+                  <span className="px-2.5 py-0.5 rounded-full text-xs font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700 flex items-center gap-1 shadow-2xs">
+                    <Sparkles className="w-3 h-3 text-amber-500" />
+                    Target Tercapai Hari Ini!
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+                Target terukur harian untuk membangun istiqomah hafalan & muraja'ah tanpa merasa terbebani.
+              </p>
+            </div>
+          </div>
+
+          {/* Action buttons */}
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            <button
+              onClick={openTargetModal}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-xl shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Atur target jumlah ayat atau surat yang ingin dihafal"
+            >
+              <Settings2 className="w-3.5 h-3.5" />
+              <span>Atur Target</span>
+            </button>
+
+            <button
+              onClick={resetDailyTargetProgress}
+              className="px-3 py-2 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-medium rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+              title="Reset progres target hari ini"
+            >
+              <RotateCcw className="w-3.5 h-3.5 text-slate-400" />
+              <span className="hidden sm:inline">Reset Hari Ini</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Visual Progress Bar & Big Numbers */}
+        <div className="p-4 sm:p-5 rounded-2xl bg-slate-50/90 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800/80 space-y-4 relative z-10">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div>
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-3xl sm:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-white font-mono">
+                  {targetProgressPct}%
+                </span>
+                <span className="text-sm font-semibold text-slate-600 dark:text-slate-300">
+                  ({completedCount} dari {targetCount} Ayat Tercapai)
+                </span>
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-0.5 flex items-center gap-2">
+                <span>Status:</span>
+                <span className="font-semibold text-emerald-700 dark:text-emerald-400">
+                  {isTargetAchieved ? 'Alhamdulillah, Target Tuntas!' : `Tersisa ${remainingTargetCount} ayat lagi hari ini`}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span className="text-slate-400">
+                  Mode: {dailyTarget.dailyGoalMode === 'all' ? 'Semua Status (Menghafal/Muraja\'ah/Mutqin)' : 'Hanya Mutqin'}
+                </span>
+              </div>
+            </div>
+
+            {/* Streak & Bonus Badge */}
+            <div className="flex items-center gap-2 sm:self-center">
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-amber-50 dark:bg-amber-950/40 border border-amber-200/80 dark:border-amber-800/60 text-xs font-bold text-amber-800 dark:text-amber-300">
+                <Flame className="w-4 h-4 fill-amber-500 text-amber-500" />
+                <span>+60 XP Bonus Target</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Animated Visual Progress Bar */}
+          <div className="w-full bg-slate-200/80 dark:bg-slate-700/80 rounded-full h-3.5 p-0.5 overflow-hidden shadow-inner relative">
+            <div 
+              className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-emerald-400 transition-all duration-700 ease-out shadow-xs shadow-emerald-500/20 relative"
+              style={{ width: `${targetProgressPct}%` }}
+            >
+              {/* Shimmer light bar */}
+              <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/25 to-transparent animate-shimmer" />
+            </div>
+          </div>
+
+          {/* Visual Step Slots / Slot Visualizer */}
+          <div className="pt-1">
+            <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-2 flex items-center justify-between">
+              <span>Slot Target Ayat ({completedCount}/{targetCount})</span>
+              <span>{isTargetAchieved ? '100% Selesai' : `${remainingTargetCount} slot tersisa`}</span>
+            </div>
+
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-6 gap-2">
+              {Array.from({ length: Math.min(targetCount, 12) }).map((_, idx) => {
+                const isSlotCompleted = idx < completedCount;
+                const isCurrentSlot = idx === completedCount;
+                const key = completedKeys[idx];
+                const keyLabel = key ? `Ayat ${key.split('_')[1]}` : `Ayat #${idx + 1}`;
+
+                return (
+                  <div
+                    key={idx}
+                    className={`p-2.5 rounded-xl border text-left transition-all flex items-center gap-2.5 ${
+                      isSlotCompleted
+                        ? 'bg-emerald-50/80 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60 text-emerald-900 dark:text-emerald-200'
+                        : isCurrentSlot
+                        ? 'bg-amber-50/80 dark:bg-amber-950/30 border-amber-300 dark:border-amber-700/80 text-amber-900 dark:text-amber-200 ring-2 ring-amber-400/40 animate-pulse'
+                        : 'bg-white dark:bg-slate-800/40 border-dashed border-slate-200 dark:border-slate-700 text-slate-400'
+                    }`}
+                  >
+                    <div className={`w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold shrink-0 ${
+                      isSlotCompleted
+                        ? 'bg-emerald-600 text-white'
+                        : isCurrentSlot
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-slate-100 dark:bg-slate-700 text-slate-400'
+                    }`}>
+                      {isSlotCompleted ? <Check className="w-3.5 h-3.5" /> : idx + 1}
+                    </div>
+                    <div className="min-w-0">
+                      <div className="text-xs font-semibold truncate">
+                        {isSlotCompleted ? keyLabel : isCurrentSlot ? 'Sedang Diproses' : `Target #${idx + 1}`}
+                      </div>
+                      <div className="text-[10px] opacity-75 truncate">
+                        {isSlotCompleted ? 'Selesai' : isCurrentSlot ? 'Langkah berikutnya' : 'Menunggu'}
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+              {targetCount > 12 && (
+                <div className="p-2.5 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/40 flex items-center justify-center text-xs text-slate-500 font-semibold">
+                  +{targetCount - 12} Ayat Lainnya
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Stats Breakdown Pills & Quick Action */}
+          <div className="pt-2 flex flex-col md:flex-row md:items-center justify-between gap-3 border-t border-slate-200/60 dark:border-slate-700/60 text-xs">
+            <div className="flex items-center gap-2 flex-wrap">
+              <span className="text-slate-500">Rincian Hari Ini:</span>
+              <span className="px-2.5 py-1 rounded-lg bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 font-medium border border-amber-200/60">
+                {todayProgressStats.memorizingCount} Menghafal
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-sky-50 dark:bg-sky-950/40 text-sky-800 dark:text-sky-300 font-medium border border-sky-200/60">
+                {todayProgressStats.reviewingCount} Muraja'ah
+              </span>
+              <span className="px-2.5 py-1 rounded-lg bg-emerald-50 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-300 font-medium border border-emerald-200/60">
+                {todayProgressStats.mutqinCount} Mutqin
+              </span>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => {
+                  setSelectedAyah(1);
+                  setIsFocusMode(true);
+                }}
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg font-semibold transition-colors flex items-center gap-1.5 shadow-xs cursor-pointer"
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+                <span>Mulai di Mode Fokus</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Motivation & Hadith Callout */}
+        <div className={`p-4 rounded-xl text-xs flex items-center gap-3 border ${
+          isTargetAchieved
+            ? 'bg-gradient-to-r from-emerald-50 to-teal-50 dark:from-emerald-950/40 dark:to-teal-950/40 border-emerald-200 dark:border-emerald-800 text-emerald-900 dark:text-emerald-200'
+            : 'bg-slate-50 dark:bg-slate-800/40 border-slate-200 dark:border-slate-800 text-slate-700 dark:text-slate-300'
+        }`}>
+          <div className="w-7 h-7 rounded-lg bg-emerald-600/15 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0">
+            {isTargetAchieved ? <Award className="w-4 h-4 text-emerald-600" /> : <Lightbulb className="w-4 h-4 text-amber-500" />}
+          </div>
+          <div className="flex-1">
+            {isTargetAchieved ? (
+              <p>
+                <strong>Mabruk! Target harian {targetCount} ayat Anda telah tercapai penuh hari ini.</strong> Konsistensi Anda menjaga Al-Quran adalah investasi terbaik dunia dan akhirat. (+60 XP telah ditambahkan)
+              </p>
+            ) : (
+              <p>
+                <em>"Amalan yang paling dicintai oleh Allah adalah amalan yang berkesinambungan (istiqomah) walaupun sedikit."</em> (HR. Muslim). Tandai ayat di bawah sebagai Menghafal, Muraja'ah, atau Mutqin untuk mengisi target hari ini.
+              </p>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1185,6 +1499,15 @@ export const QuranTracker: React.FC = () => {
                         <Check className="w-3.5 h-3.5" />
                         <span>Mutqin (Lancar)</span>
                       </button>
+
+                      <button
+                        onClick={() => openReflectionForAyah(selectedSurah, ayah.numberInSurah)}
+                        className="px-2.5 py-1 text-xs rounded-md font-medium bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors flex items-center gap-1 cursor-pointer border border-amber-200 dark:border-amber-800/60"
+                        title="Buka Tadabbur & Refleksi Ayat di Think Quran"
+                      >
+                        <Compass className="w-3.5 h-3.5 text-amber-500" />
+                        <span>Think Quran</span>
+                      </button>
                     </div>
                   </div>
                 </div>
@@ -1193,6 +1516,228 @@ export const QuranTracker: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* Target Setting Modal */}
+      {showTargetModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-fade-in">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full p-6 sm:p-7 space-y-6 relative max-h-[90vh] overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex items-center justify-between pb-4 border-b border-slate-100 dark:border-slate-800">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white flex items-center justify-center font-bold shadow-md shadow-emerald-500/20">
+                  <Target className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900 dark:text-white">
+                    Atur Target Hafalan Harian
+                  </h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    Pilih jumlah ayat harian atau target surat spesifik sesuai ritme Anda
+                  </p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => setShowTargetModal(false)}
+                className="w-8 h-8 rounded-xl bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-500 flex items-center justify-center transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Step 1: Mode Target Selector */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                1. Mode Target Hafalan
+              </label>
+              <div className="grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setTempTargetType('ayah_count')}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    tempTargetType === 'ayah_count'
+                      ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <div className="text-sm font-bold flex items-center gap-1.5">
+                    <TrendingUp className="w-4 h-4 text-emerald-600" />
+                    <span>Jumlah Ayat Harian</span>
+                  </div>
+                  <div className="text-[11px] opacity-75 mt-0.5">
+                    Bebas dari surat apa saja yang sedang Anda pelajari
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTempTargetType('surah')}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    tempTargetType === 'surah'
+                      ? 'border-emerald-500 bg-emerald-50/80 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  <div className="text-sm font-bold flex items-center gap-1.5">
+                    <Bookmark className="w-4 h-4 text-teal-600" />
+                    <span>Fokus Surat Spesifik</span>
+                  </div>
+                  <div className="text-[11px] opacity-75 mt-0.5">
+                    Target ayat terkonsentrasi pada 1 surat (misal: Al-Mulk)
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* If Surah Mode is Active: Pick Surah */}
+            {tempTargetType === 'surah' && (
+              <div className="space-y-2 p-3.5 rounded-2xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
+                  <Bookmark className="w-3.5 h-3.5 text-teal-600" />
+                  <span>Pilih Surat Target</span>
+                </label>
+                <select
+                  value={tempTargetSurahNumber}
+                  onChange={(e) => setTempTargetSurahNumber(parseInt(e.target.value))}
+                  className="w-full bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl px-3 py-2.5 text-sm text-slate-900 dark:text-white font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                >
+                  {SURAH_LIST.map(s => (
+                    <option key={s.number} value={s.number}>
+                      {s.number}. {s.nameLatin} ({s.indonesianNameTranslation}) — {s.numberOfAyahs} Ayat
+                    </option>
+                  ))}
+                </select>
+                <p className="text-[11px] text-slate-500">
+                  Ayat yang ditandai dari surat ini akan otomatis masuk ke progres target harian Anda.
+                </p>
+              </div>
+            )}
+
+            {/* Step 2: Presets for Daily Ayah Count */}
+            <div className="space-y-2.5">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                2. Jumlah Ayat per Hari
+              </label>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                {[
+                  { count: 2, label: '2 Ayat', badge: 'Santai', sub: 'Pekerja Super Sibuk' },
+                  { count: 3, label: '3 Ayat', badge: 'Konsisten', sub: 'Standar Harian' },
+                  { count: 5, label: '5 Ayat', badge: 'Ideal', sub: 'Metode Islamicity' },
+                  { count: 7, label: '7 Ayat', badge: 'Semangat', sub: 'Akselerasi Berkah' },
+                  { count: 10, label: '10 Ayat', badge: 'Intensif', sub: 'Karantina Tahfidz' },
+                ].map(p => {
+                  const isSelected = tempTargetAyahCount === p.count && customAyahInput === String(p.count);
+                  return (
+                    <button
+                      key={p.count}
+                      type="button"
+                      onClick={() => {
+                        setTempTargetAyahCount(p.count);
+                        setCustomAyahInput(String(p.count));
+                      }}
+                      className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                        isSelected
+                          ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/50 text-emerald-900 dark:text-emerald-200 ring-2 ring-emerald-500/20'
+                          : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm font-bold">{p.label}</span>
+                        <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-900/60 text-emerald-800 dark:text-emerald-300">
+                          {p.badge}
+                        </span>
+                      </div>
+                      <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                        {p.sub}
+                      </div>
+                    </button>
+                  );
+                })}
+
+                {/* Custom Count Option */}
+                <div className="p-2.5 rounded-2xl border border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/40 flex flex-col justify-between">
+                  <span className="text-xs font-bold text-slate-700 dark:text-slate-300">Kustom (Angka)</span>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <input
+                      type="number"
+                      min="1"
+                      max="50"
+                      value={customAyahInput}
+                      onChange={(e) => {
+                        setCustomAyahInput(e.target.value);
+                        const val = parseInt(e.target.value);
+                        if (!isNaN(val) && val > 0) setTempTargetAyahCount(val);
+                      }}
+                      className="w-full bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-xs text-center font-bold text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                      placeholder="1-50"
+                    />
+                    <span className="text-[11px] text-slate-500">Ayat</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Step 3: Goal Criteria */}
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider">
+                3. Kriteria Penyelesaian Ayat
+              </label>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <button
+                  type="button"
+                  onClick={() => setTempGoalMode('all')}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    tempGoalMode === 'all'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="font-bold">Semua Aktivitas Hafalan</div>
+                  <div className="text-[10px] opacity-80 mt-0.5">
+                    Menghafal, Muraja'ah, maupun Mutqin dihitung ke target
+                  </div>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setTempGoalMode('mutqin')}
+                  className={`p-3 rounded-2xl border text-left transition-all cursor-pointer ${
+                    tempGoalMode === 'mutqin'
+                      ? 'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 text-emerald-900 dark:text-emerald-200 font-semibold ring-2 ring-emerald-500/20'
+                      : 'border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-400 hover:bg-slate-50'
+                  }`}
+                >
+                  <div className="font-bold">Hanya Status Mutqin (Lancar)</div>
+                  <div className="text-[10px] opacity-80 mt-0.5">
+                    Hanya ayat yang ditandai tuntas mutqin yang dihitung
+                  </div>
+                </button>
+              </div>
+            </div>
+
+            {/* Modal Actions */}
+            <div className="flex items-center justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setShowTargetModal(false)}
+                className="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300 text-xs font-semibold hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              >
+                Batal
+              </button>
+
+              <button
+                type="button"
+                onClick={handleSaveTarget}
+                className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-500/20 transition-all flex items-center gap-2 cursor-pointer"
+              >
+                <Check className="w-4 h-4" />
+                <span>Simpan & Terapkan Target</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

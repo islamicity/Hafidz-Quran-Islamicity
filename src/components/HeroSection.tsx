@@ -4,7 +4,7 @@
  */
 import React from 'react';
 import { useApp } from '../context/AppContext';
-import { Sparkles, BookOpen, Volume2, ArrowRight, ShieldCheck, Flame, Calendar } from 'lucide-react';
+import { Sparkles, BookOpen, Volume2, ArrowRight, ShieldCheck, Flame, Calendar, Compass } from 'lucide-react';
 
 export const HeroSection: React.FC = () => {
   const { 
@@ -71,6 +71,14 @@ export const HeroSection: React.FC = () => {
             <Sparkles className="w-4 h-4 text-amber-300" />
             <span>Mulai Kota Memori Surah Al-Mulk</span>
             <ArrowRight className="w-4 h-4" />
+          </button>
+
+          <button
+            onClick={() => setActiveTab('thinkquran')}
+            className="px-4 py-2.5 bg-amber-500/20 hover:bg-amber-500/30 text-amber-200 text-xs sm:text-sm font-semibold rounded-xl border border-amber-400/40 transition-colors flex items-center gap-2 cursor-pointer shadow-xs"
+          >
+            <Compass className="w-4 h-4 text-amber-400" />
+            <span>Think Quran (Tadabbur)</span>
           </button>
 
           <button

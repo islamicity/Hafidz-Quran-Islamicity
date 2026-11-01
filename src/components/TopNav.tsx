@@ -16,7 +16,8 @@ import {
   Cloud, 
   Bell, 
   Download,
-  ShieldCheck
+  ShieldCheck,
+  Compass
 } from 'lucide-react';
 
 export const TopNav: React.FC = () => {
@@ -78,6 +79,18 @@ export const TopNav: React.FC = () => {
           >
             <BookOpen className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
             <span>Pelacak Hafalan</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('thinkquran')}
+            className={`px-3 py-1.5 text-xs xl:text-sm font-medium rounded-lg transition-colors whitespace-nowrap shrink-0 flex items-center gap-1.5 ${
+              activeTab === 'thinkquran'
+                ? 'bg-amber-50 text-amber-900 dark:bg-amber-950/60 dark:text-amber-300 font-semibold shadow-2xs'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-50 dark:hover:bg-slate-800/50'
+            }`}
+          >
+            <Compass className="w-4 h-4 text-amber-500" />
+            <span>Think Quran</span>
           </button>
 
           <button
@@ -212,6 +225,12 @@ export const TopNav: React.FC = () => {
           className={`px-2.5 py-1 rounded-md whitespace-nowrap ${activeTab === 'tracker' ? 'font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50' : 'text-slate-600 dark:text-slate-400'}`}
         >
           Hafalan
+        </button>
+        <button
+          onClick={() => setActiveTab('thinkquran')}
+          className={`px-2.5 py-1 rounded-md whitespace-nowrap ${activeTab === 'thinkquran' ? 'font-semibold text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50' : 'text-slate-600 dark:text-slate-400'}`}
+        >
+          Think Quran
         </button>
         <button
           onClick={() => setActiveTab('palace')}

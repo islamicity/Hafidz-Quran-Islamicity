@@ -150,5 +150,49 @@ export interface GamificationState {
   }[];
 }
 
+export interface QuranReflectionItem {
+  id: string;
+  surahNumber: number;
+  surahName: string;
+  ayahNumber: number;
+  ayahArabic: string;
+  transliteration: string;
+  translation: string;
+  theme: 'Ketenangan & Kecemasan' | 'Tujuan Hidup & Karir' | 'Keluarga & Relasi' | 'Kesulitan & Ujian' | 'Syukur & Berkah' | 'Dosa & Harapan';
+  divineMessage: string;
+  dailyLifeContext: string;
+  soulReflectionPrompt: string;
+  actionableStep: string;
+  heartfeltPrayer: string;
+  tags: string[];
+}
+
+export interface UserPersonalReflection {
+  id: string;
+  ayahRef: string;
+  surahNumber: number;
+  ayahNumber: number;
+  userLifeSituation: string;
+  reflectionNote: string;
+  actionCommitment: string;
+  createdAt: string;
+  moodTag?: 'tenang' | 'tersentuh' | 'bersemangat' | 'insyaf' | 'bersyukur';
+  isFavorite?: boolean;
+}
+
+export type DailyTargetType = 'ayah_count' | 'surah';
+
+export interface DailyMemorizationTarget {
+  targetType: DailyTargetType;
+  targetAyahCount: number;
+  targetSurahNumber?: number;
+  targetSurahName?: string;
+  targetSurahAyahRange?: { from: number; to: number };
+  dailyGoalMode: 'all' | 'memorizing' | 'mutqin';
+  lastTargetDate: string; // YYYY-MM-DD
+  completedAyahKeys: string[]; // format "surah_ayah", e.g. ["67_1", "67_2"]
+}
+
 export type AppLanguage = 'id' | 'en' | 'ar';
 export type AppTheme = 'light' | 'dark' | 'system';
+
