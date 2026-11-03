@@ -180,19 +180,40 @@ export interface UserPersonalReflection {
   isFavorite?: boolean;
 }
 
-export type DailyTargetType = 'ayah_count' | 'surah';
+export type DailyTargetType = 'ayah_count' | 'page' | 'surah';
+export type DailyTargetUnit = 'ayat' | 'page';
 
 export interface DailyMemorizationTarget {
   targetType: DailyTargetType;
+  targetUnit: DailyTargetUnit;
   targetAyahCount: number;
+  targetPageCount?: number;
   targetSurahNumber?: number;
   targetSurahName?: string;
   targetSurahAyahRange?: { from: number; to: number };
   dailyGoalMode: 'all' | 'memorizing' | 'mutqin';
   lastTargetDate: string; // YYYY-MM-DD
   completedAyahKeys: string[]; // format "surah_ayah", e.g. ["67_1", "67_2"]
+  completedGoalDates?: string[]; // Array of YYYY-MM-DD when daily target was 100% completed
+  goalStreak?: number; // Current calculated consecutive days completing the daily goal
 }
 
 export type AppLanguage = 'id' | 'en' | 'ar';
 export type AppTheme = 'light' | 'dark' | 'system';
 
+export type MemorizationMood = 'lancar' | 'berjuang' | 'khusyuk' | 'syukur' | 'evaluasi';
+
+export interface MemorizationVoiceJournal {
+  id: string;
+  date: string; // YYYY-MM-DD
+  surahNumber: number;
+  surahName: string;
+  ayahNumber?: number;
+  targetProgressSummary: string;
+  streakDays: number;
+  transcript: string;
+  mood: MemorizationMood;
+  tags: string[];
+  createdAt: string;
+  updatedAt?: string;
+}

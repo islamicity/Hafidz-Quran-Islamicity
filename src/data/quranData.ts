@@ -3,80 +3,12 @@
  * Full 114 Surahs with comprehensive verses for core memorization blueprints
  */
 import { Surah, Ayah } from '../types';
+import { SURAH_AR_RAHMAN_AYAHS } from './surahArRahman';
 
-export const SURAH_LIST: Surah[] = [
-  { number: 1, nameArabic: "الفاتحة", nameLatin: "Al-Fatihah", englishNameTranslation: "The Opening", indonesianNameTranslation: "Pembukaan", numberOfAyahs: 7, revelationType: "Meccan", juzStart: 1, juzEnd: 1 },
-  { number: 2, nameArabic: "البقرة", nameLatin: "Al-Baqarah", englishNameTranslation: "The Cow", indonesianNameTranslation: "Sapi Betina", numberOfAyahs: 286, revelationType: "Medinan", juzStart: 1, juzEnd: 3 },
-  { number: 3, nameArabic: "آل عمران", nameLatin: "Ali 'Imran", englishNameTranslation: "Family of Imran", indonesianNameTranslation: "Keluarga Imran", numberOfAyahs: 200, revelationType: "Medinan", juzStart: 3, juzEnd: 4 },
-  { number: 4, nameArabic: "النساء", nameLatin: "An-Nisa", englishNameTranslation: "The Women", indonesianNameTranslation: "Wanita", numberOfAyahs: 176, revelationType: "Medinan", juzStart: 4, juzEnd: 6 },
-  { number: 5, nameArabic: "المائدة", nameLatin: "Al-Ma'idah", englishNameTranslation: "The Table Spread", indonesianNameTranslation: "Hidangan", numberOfAyahs: 120, revelationType: "Medinan", juzStart: 6, juzEnd: 7 },
-  { number: 6, nameArabic: "الأنعام", nameLatin: "Al-An'am", englishNameTranslation: "The Cattle", indonesianNameTranslation: "Binatang Ternak", numberOfAyahs: 165, revelationType: "Meccan", juzStart: 7, juzEnd: 8 },
-  { number: 7, nameArabic: "الأعراف", nameLatin: "Al-A'raf", englishNameTranslation: "The Heights", indonesianNameTranslation: "Tempat yang Tertinggi", numberOfAyahs: 206, revelationType: "Meccan", juzStart: 8, juzEnd: 9 },
-  { number: 8, nameArabic: "الأنفال", nameLatin: "Al-Anfal", englishNameTranslation: "The Spoils of War", indonesianNameTranslation: "Rampasan Perang", numberOfAyahs: 75, revelationType: "Medinan", juzStart: 9, juzEnd: 10 },
-  { number: 9, nameArabic: "التوبة", nameLatin: "At-Tawbah", englishNameTranslation: "The Repentance", indonesianNameTranslation: "Pengampunan", numberOfAyahs: 129, revelationType: "Medinan", juzStart: 10, juzEnd: 11 },
-  { number: 10, nameArabic: "يونس", nameLatin: "Yunus", englishNameTranslation: "Jonah", indonesianNameTranslation: "Nabi Yunus", numberOfAyahs: 109, revelationType: "Meccan", juzStart: 11, juzEnd: 11 },
-  { number: 11, nameArabic: "هود", nameLatin: "Hud", englishNameTranslation: "Hud", indonesianNameTranslation: "Nabi Hud", numberOfAyahs: 123, revelationType: "Meccan", juzStart: 11, juzEnd: 12 },
-  { number: 12, nameArabic: "يوسف", nameLatin: "Yusuf", englishNameTranslation: "Joseph", indonesianNameTranslation: "Nabi Yusuf", numberOfAyahs: 111, revelationType: "Meccan", juzStart: 12, juzEnd: 13 },
-  { number: 13, nameArabic: "الرعد", nameLatin: "Ar-Ra'd", englishNameTranslation: "The Thunder", indonesianNameTranslation: "Guruh", numberOfAyahs: 43, revelationType: "Medinan", juzStart: 13, juzEnd: 13 },
-  { number: 14, nameArabic: "إبراهيم", nameLatin: "Ibrahim", englishNameTranslation: "Abraham", indonesianNameTranslation: "Nabi Ibrahim", numberOfAyahs: 52, revelationType: "Meccan", juzStart: 13, juzEnd: 13 },
-  { number: 15, nameArabic: "الحجر", nameLatin: "Al-Hijr", englishNameTranslation: "The Rocky Tract", indonesianNameTranslation: "Bukit Batu", numberOfAyahs: 99, revelationType: "Meccan", juzStart: 14, juzEnd: 14 },
-  { number: 16, nameArabic: "النحل", nameLatin: "An-Nahl", englishNameTranslation: "The Bee", indonesianNameTranslation: "Lebah", numberOfAyahs: 128, revelationType: "Meccan", juzStart: 14, juzEnd: 14 },
-  { number: 17, nameArabic: "الإسراء", nameLatin: "Al-Isra", englishNameTranslation: "The Night Journey", indonesianNameTranslation: "Perjalanan Malam", numberOfAyahs: 111, revelationType: "Meccan", juzStart: 15, juzEnd: 15 },
-  { number: 18, nameArabic: "الكهف", nameLatin: "Al-Kahf", englishNameTranslation: "The Cave", indonesianNameTranslation: "Gua", numberOfAyahs: 110, revelationType: "Meccan", juzStart: 15, juzEnd: 16 },
-  { number: 19, nameArabic: "مريم", nameLatin: "Maryam", englishNameTranslation: "Mary", indonesianNameTranslation: "Maryam", numberOfAyahs: 98, revelationType: "Meccan", juzStart: 16, juzEnd: 16 },
-  { number: 20, nameArabic: "طه", nameLatin: "Taha", englishNameTranslation: "Ta-Ha", indonesianNameTranslation: "Thaha", numberOfAyahs: 135, revelationType: "Meccan", juzStart: 16, juzEnd: 16 },
-  { number: 36, nameArabic: "يس", nameLatin: "Ya-Sin", englishNameTranslation: "Ya Sin", indonesianNameTranslation: "Yasin", numberOfAyahs: 83, revelationType: "Meccan", juzStart: 22, juzEnd: 23 },
-  { number: 55, nameArabic: "الرحمن", nameLatin: "Ar-Rahman", englishNameTranslation: "The Beneficent", indonesianNameTranslation: "Yang Maha Pengasih", numberOfAyahs: 78, revelationType: "Medinan", juzStart: 27, juzEnd: 27 },
-  { number: 56, nameArabic: "الواقعة", nameLatin: "Al-Waqi'ah", englishNameTranslation: "The Inevitable", indonesianNameTranslation: "Hari Kiamat", numberOfAyahs: 96, revelationType: "Meccan", juzStart: 27, juzEnd: 27 },
-  { number: 67, nameArabic: "الملك", nameLatin: "Al-Mulk", englishNameTranslation: "The Sovereignty", indonesianNameTranslation: "Kerajaan", numberOfAyahs: 30, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 68, nameArabic: "القلم", nameLatin: "Al-Qalam", englishNameTranslation: "The Pen", indonesianNameTranslation: "Pena", numberOfAyahs: 52, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 69, nameArabic: "الحاقة", nameLatin: "Al-Haqqah", englishNameTranslation: "The Reality", indonesianNameTranslation: "Hari Kiamat", numberOfAyahs: 52, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 70, nameArabic: "المعارج", nameLatin: "Al-Ma'arij", englishNameTranslation: "The Ascending Stairways", indonesianNameTranslation: "Tempat Naik", numberOfAyahs: 44, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 71, nameArabic: "نوح", nameLatin: "Nuh", englishNameTranslation: "Noah", indonesianNameTranslation: "Nabi Nuh", numberOfAyahs: 28, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 72, nameArabic: "الجن", nameLatin: "Al-Jinn", englishNameTranslation: "The Jinn", indonesianNameTranslation: "Jin", numberOfAyahs: 28, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 73, nameArabic: "المزمل", nameLatin: "Al-Muzzammil", englishNameTranslation: "The Enshrouded One", indonesianNameTranslation: "Orang yang Berselimut", numberOfAyahs: 20, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 74, nameArabic: "المدثر", nameLatin: "Al-Muddaththir", englishNameTranslation: "The Cloaked One", indonesianNameTranslation: "Orang yang Berkemul", numberOfAyahs: 56, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 75, nameArabic: "القيامة", nameLatin: "Al-Qiyamah", englishNameTranslation: "The Resurrection", indonesianNameTranslation: "Hari Berbangkit", numberOfAyahs: 40, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 76, nameArabic: "الإنسان", nameLatin: "Al-Insan", englishNameTranslation: "The Human", indonesianNameTranslation: "Manusia", numberOfAyahs: 31, revelationType: "Medinan", juzStart: 29, juzEnd: 29 },
-  { number: 77, nameArabic: "المرسلات", nameLatin: "Al-Mursalat", englishNameTranslation: "The Emissaries", indonesianNameTranslation: "Malaikat-Malaikat yang Diutus", numberOfAyahs: 50, revelationType: "Meccan", juzStart: 29, juzEnd: 29 },
-  { number: 78, nameArabic: "النبأ", nameLatin: "An-Naba", englishNameTranslation: "The Tidings", indonesianNameTranslation: "Berita Besar", numberOfAyahs: 40, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 79, nameArabic: "النازعات", nameLatin: "An-Nazi'at", englishNameTranslation: "Those Who Drag Forth", indonesianNameTranslation: "Malaikat yang Mencabut", numberOfAyahs: 46, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 80, nameArabic: "عبس", nameLatin: "'Abasa", englishNameTranslation: "He Frowned", indonesianNameTranslation: "Ia Bermuka Masam", numberOfAyahs: 42, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 81, nameArabic: "التكوير", nameLatin: "At-Takwir", englishNameTranslation: "The Overthrowing", indonesianNameTranslation: "Menggulung", numberOfAyahs: 29, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 82, nameArabic: "الانفطار", nameLatin: "Al-Infitar", englishNameTranslation: "The Cleaving", indonesianNameTranslation: "Terbelah", numberOfAyahs: 19, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 83, nameArabic: "المطففين", nameLatin: "Al-Mutaffifin", englishNameTranslation: "Defrauding", indonesianNameTranslation: "Orang-Orang Curang", numberOfAyahs: 36, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 84, nameArabic: "الانشقاق", nameLatin: "Al-Inshiqaq", englishNameTranslation: "The Splitting Open", indonesianNameTranslation: "Terbelah", numberOfAyahs: 25, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 85, nameArabic: "البروج", nameLatin: "Al-Buruj", englishNameTranslation: "The Mansions of the Stars", indonesianNameTranslation: "Gugusan Bintang", numberOfAyahs: 22, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 86, nameArabic: "الطارق", nameLatin: "At-Tariq", englishNameTranslation: "The Morning Star", indonesianNameTranslation: "Yang Datang di Malam Hari", numberOfAyahs: 17, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 87, nameArabic: "الأعلى", nameLatin: "Al-A'la", englishNameTranslation: "The Most High", indonesianNameTranslation: "Yang Paling Tinggi", numberOfAyahs: 19, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 88, nameArabic: "الغاشية", nameLatin: "Al-Ghashiyah", englishNameTranslation: "The Overwhelming", indonesianNameTranslation: "Hari Pembalasan", numberOfAyahs: 26, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 89, nameArabic: "الفجر", nameLatin: "Al-Fajr", englishNameTranslation: "The Dawn", indonesianNameTranslation: "Fajar", numberOfAyahs: 30, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 90, nameArabic: "البلد", nameLatin: "Al-Balad", englishNameTranslation: "The City", indonesianNameTranslation: "Negeri", numberOfAyahs: 20, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 91, nameArabic: "الشمس", nameLatin: "Ash-Shams", englishNameTranslation: "The Sun", indonesianNameTranslation: "Matahari", numberOfAyahs: 15, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 92, nameArabic: "الليل", nameLatin: "Al-Layl", englishNameTranslation: "The Night", indonesianNameTranslation: "Malam", numberOfAyahs: 21, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 93, nameArabic: "الضحى", nameLatin: "Ad-Duhaa", englishNameTranslation: "The Morning Hours", indonesianNameTranslation: "Waktu Duha", numberOfAyahs: 11, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 94, nameArabic: "الشرح", nameLatin: "Ash-Sharh", englishNameTranslation: "The Relief", indonesianNameTranslation: "Kelapangan", numberOfAyahs: 8, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 95, nameArabic: "التين", nameLatin: "At-Tin", englishNameTranslation: "The Fig", indonesianNameTranslation: "Buah Tin", numberOfAyahs: 8, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 96, nameArabic: "العلق", nameLatin: "Al-'Alaq", englishNameTranslation: "The Clot", indonesianNameTranslation: "Segumpal Darah", numberOfAyahs: 19, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 97, nameArabic: "القدر", nameLatin: "Al-Qadr", englishNameTranslation: "The Power", indonesianNameTranslation: "Kemuliaan", numberOfAyahs: 5, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 98, nameArabic: "البينة", nameLatin: "Al-Bayyinah", englishNameTranslation: "The Clear Proof", indonesianNameTranslation: "Bukti Nyata", numberOfAyahs: 8, revelationType: "Medinan", juzStart: 30, juzEnd: 30 },
-  { number: 99, nameArabic: "الزلزلة", nameLatin: "Az-Zalzalah", englishNameTranslation: "The Earthquake", indonesianNameTranslation: "Kegoncangan", numberOfAyahs: 8, revelationType: "Medinan", juzStart: 30, juzEnd: 30 },
-  { number: 100, nameArabic: "العاديات", nameLatin: "Al-'Adiyat", englishNameTranslation: "The Courser", indonesianNameTranslation: "Kuda yang Berlari Kencang", numberOfAyahs: 11, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 101, nameArabic: "القارعة", nameLatin: "Al-Qari'ah", englishNameTranslation: "The Calamity", indonesianNameTranslation: "Hari Kiamat", numberOfAyahs: 11, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 102, nameArabic: "التكاثر", nameLatin: "At-Takathur", englishNameTranslation: "The Rivalry in World Increase", indonesianNameTranslation: "Bermegah-megahan", numberOfAyahs: 8, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 103, nameArabic: "العصر", nameLatin: "Al-'Asr", englishNameTranslation: "The Declining Day", indonesianNameTranslation: "Masa", numberOfAyahs: 3, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 104, nameArabic: "الهمزة", nameLatin: "Al-Humazah", englishNameTranslation: "The Traducer", indonesianNameTranslation: "Pengumpat", numberOfAyahs: 9, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 105, nameArabic: "الفيل", nameLatin: "Al-Fil", englishNameTranslation: "The Elephant", indonesianNameTranslation: "Gajah", numberOfAyahs: 5, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 106, nameArabic: "قريش", nameLatin: "Quraysh", englishNameTranslation: "Quraysh", indonesianNameTranslation: "Suku Quraisy", numberOfAyahs: 4, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 107, nameArabic: "الماعون", nameLatin: "Al-Ma'un", englishNameTranslation: "The Small Kindnesses", indonesianNameTranslation: "Barang yang Berguna", numberOfAyahs: 7, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 108, nameArabic: "الكوثر", nameLatin: "Al-Kawthar", englishNameTranslation: "The Abundance", indonesianNameTranslation: "Nikmat yang Berlimpah", numberOfAyahs: 3, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 109, nameArabic: "الكافرون", nameLatin: "Al-Kafirun", englishNameTranslation: "The Disbelievers", indonesianNameTranslation: "Orang-Orang Kafir", numberOfAyahs: 6, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 110, nameArabic: "النصر", nameLatin: "An-Nasr", englishNameTranslation: "The Divine Support", indonesianNameTranslation: "Pertolongan", numberOfAyahs: 3, revelationType: "Medinan", juzStart: 30, juzEnd: 30 },
-  { number: 111, nameArabic: "المسد", nameLatin: "Al-Masad", englishNameTranslation: "The Palm Fiber", indonesianNameTranslation: "Gejolak Api (Tali Sabut)", numberOfAyahs: 5, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 112, nameArabic: "الإخلاص", nameLatin: "Al-Ikhlas", englishNameTranslation: "The Sincerity", indonesianNameTranslation: "Ikhlas", numberOfAyahs: 4, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 113, nameArabic: "الفلق", nameLatin: "Al-Falaq", englishNameTranslation: "The Daybreak", indonesianNameTranslation: "Waktu Subuh", numberOfAyahs: 5, revelationType: "Meccan", juzStart: 30, juzEnd: 30 },
-  { number: 114, nameArabic: "الناس", nameLatin: "An-Nas", englishNameTranslation: "Mankind", indonesianNameTranslation: "Manusia", numberOfAyahs: 6, revelationType: "Meccan", juzStart: 30, juzEnd: 30 }
-];
+import { ALL_114_SURAHS } from './allSurahsList';
+import allQuranAyahsData from './allQuranAyahs.json';
+
+export const SURAH_LIST: Surah[] = ALL_114_SURAHS;
 
 // Rich datasets for core memorization surahs
 export const DETAILED_SURAHS: Record<number, Ayah[]> = {
@@ -380,38 +312,28 @@ export const DETAILED_SURAHS: Record<number, Ayah[]> = {
       tajweedRule: "Idgham Bilaghunnah pada Yakul-lahu. Mad Shilah Qashirah (2 harakat). Qalqalah Kubra.",
       memoryHint: "Loci 4: Cermin Cahaya Murni tanpa ada bayangan tandingan yang menyamainya."
     }
-  ]
+  ],
+
+  // Surah Ar-Rahman (55) - Otentik 78 Ayat Lengkap
+  55: SURAH_AR_RAHMAN_AYAHS
 };
 
 /**
- * Returns the ayahs for a given surah.
- * If pre-curated detailed data exists, returns it.
- * Otherwise generates clean structured verses so the user can track any ayah across all 114 Surahs.
+ * Returns authentic, genuine Quran ayahs for any of the 114 Surahs.
+ * Priority:
+ * 1. DETAILED_SURAHS if handcrafted loci/tajweed annotations are available (e.g. Al-Fatihah, Al-Mulk, Al-Ikhlas, Ar-Rahman)
+ * 2. allQuranAyahsData containing all 114 surahs with authentic Arabic Uthmani script, latin transliteration, Indonesian translation, and recitation audio.
  */
 export function getAyahsForSurah(surahNumber: number): Ayah[] {
   if (DETAILED_SURAHS[surahNumber]) {
     return DETAILED_SURAHS[surahNumber];
   }
 
-  const surahMeta = SURAH_LIST.find(s => s.number === surahNumber);
-  const count = surahMeta ? surahMeta.numberOfAyahs : 10;
-  const juz = surahMeta ? surahMeta.juzStart : 30;
-
-  const list: Ayah[] = [];
-  for (let i = 1; i <= Math.min(count, 50); i++) {
-    const formattedSurah = String(surahNumber).padStart(3, '0');
-    const formattedAyah = String(i).padStart(3, '0');
-    list.push({
-      numberInSurah: i,
-      juz: juz,
-      textArabic: `ءَايَةٌ كَرِيمَةٌ مِن سُورَةِ ${surahMeta?.nameArabic || 'القرآن'} (الآية ${i})`,
-      transliteration: `Ayah ${i} min Surah ${surahMeta?.nameLatin || 'Al-Quran'}`,
-      translationId: `Ayat ke-${i} dari surah ${surahMeta?.nameLatin} (${surahMeta?.indonesianNameTranslation}).`,
-      translationEn: `Verse ${i} from Surah ${surahMeta?.nameLatin} (${surahMeta?.englishNameTranslation}).`,
-      audioUrl: `https://everyayah.com/data/Alafasy_128kbps/${formattedSurah}${formattedAyah}.mp3`,
-      tajweedRule: "Hukum tajwid: Perhatikan makharijul huruf, mad thabi'i, dan kaidah waqf pada akhir ayat.",
-      memoryHint: `Loci ${i}: Titik kota memori ${i} pada rute muraja'ah Surah ${surahMeta?.nameLatin}.`
-    });
+  const allAyahsMap = allQuranAyahsData as unknown as Record<string, Ayah[]>;
+  const authentic = allAyahsMap[String(surahNumber)];
+  if (authentic && authentic.length > 0) {
+    return authentic;
   }
-  return list;
+
+  return [];
 }

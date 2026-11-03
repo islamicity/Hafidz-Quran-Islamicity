@@ -51,7 +51,7 @@ export const MemoryPalaceViewer: React.FC = () => {
 
   const activeRoom = PRECONFIGURED_ROOMS[activeRoomIndex];
   const currentLocus = activeRoom.loci[activeLocusIndex] || activeRoom.loci[0];
-  const relatedAyah = DETAILED_SURAHS[activeRoom.surahNumber]?.find(a => a.numberInSurah === currentLocus.ayahTarget);
+  const relatedAyah = getAyahsForSurah(activeRoom.surahNumber)?.find(a => a.numberInSurah === currentLocus.ayahTarget);
 
   const handleNextLocus = () => {
     if (activeLocusIndex < activeRoom.loci.length - 1) {

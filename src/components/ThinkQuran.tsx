@@ -34,13 +34,20 @@ import {
   Sun,
   Flame,
   ShieldCheck,
-  RefreshCw
+  RefreshCw,
+  Search,
+  Filter,
+  Edit3,
+  X,
+  FileText,
+  Sparkle
 } from 'lucide-react';
 
 export const ThinkQuran: React.FC = () => {
   const { 
     savedReflections, 
     saveUserReflection, 
+    updateUserReflection,
     deleteUserReflection, 
     toggleFavoriteReflection,
     activeReflectionAyah,
@@ -66,13 +73,22 @@ export const ThinkQuran: React.FC = () => {
   const [isGeneratingTadabbur, setIsGeneratingTadabbur] = useState<boolean>(false);
   const [customAiReflection, setCustomAiReflection] = useState<QuranReflectionItem | null>(null);
 
-  // Journaling Form State
-  const [journalOpen, setJournalOpen] = useState<boolean>(false);
-  const [journalSituation, setJournalSituation] = useState<string>('');
-  const [journalNote, setJournalNote] = useState<string>('');
-  const [journalCommitment, setJournalCommitment] = useState<string>('');
-  const [journalMood, setJournalMood] = useState<'tenang' | 'tersentuh' | 'bersemangat' | 'insyaf' | 'bersyukur'>('tenang');
+  // Note-Taking / Journaling State
+  const [noteEditorOpen, setNoteEditorOpen] = useState<boolean>(false);
+  const [editingNoteId, setEditingNoteId] = useState<string | null>(null);
+  const [noteSurahNumber, setNoteSurahNumber] = useState<number>(67);
+  const [noteAyahNumber, setNoteAyahNumber] = useState<number>(1);
+  const [noteTitle, setNoteTitle] = useState<string>('');
+  const [noteText, setNoteText] = useState<string>('');
+  const [noteCommitment, setNoteCommitment] = useState<string>('');
+  const [noteMood, setNoteMood] = useState<'tenang' | 'tersentuh' | 'bersemangat' | 'insyaf' | 'bersyukur'>('tenang');
+  
+  // Filter & Search state for notes
+  const [noteSearchQuery, setNoteSearchQuery] = useState<string>('');
+  const [noteFilterTab, setNoteFilterTab] = useState<'all' | 'current_ayah' | 'favorites'>('all');
+  const [noteFilterMood, setNoteFilterMood] = useState<string>('all');
   const [copySuccess, setCopySuccess] = useState<string | null>(null);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   // If activeReflectionAyah is provided from QuranTracker or FocusMode, sync it
   useEffect(() => {
@@ -177,26 +193,135 @@ export const ThinkQuran: React.FC = () => {
     }
   };
 
-  // Submit personal reflection journal entry
-  const handleSubmitJournal = (e: React.FormEvent) => {
+  // Derived active verse data for note preview
+  const selectedNoteSurahMeta = SURAH_LIST.find(s => s.number === noteSurahNumber) || SURAH_LIST[0];
+  const selectedNoteSurahAyahs = getAyahsForSurah(noteSurahNumber);
+  const selectedNoteAyah = selectedNoteSurahAyahs.find(a => a.numberInSurah === noteAyahNumber) || selectedNoteSurahAyahs[0];
+
+  // Notes specifically written for the currently displayed active verse
+  const notesForActiveAyah = savedReflections.filter(
+    r => r.surahNumber === activeReflection.surahNumber && r.ayahNumber === activeReflection.ayahNumber
+  );
+
+  // Filtered saved notes list
+  const filteredSavedNotes = savedReflections.filter((note) => {
+    if (noteFilterTab === 'current_ayah') {
+      if (note.surahNumber !== activeReflection.surahNumber || note.ayahNumber !== activeReflection.ayahNumber) {
+        return false;
+      }
+    } else if (noteFilterTab === 'favorites') {
+      if (!note.isFavorite) return false;
+    }
+
+    if (noteFilterMood !== 'all' && note.moodTag !== noteFilterMood) {
+      return false;
+    }
+
+    if (noteSearchQuery.trim()) {
+      const q = noteSearchQuery.toLowerCase();
+      const matchRef = note.ayahRef.toLowerCase().includes(q);
+      const matchNote = note.reflectionNote.toLowerCase().includes(q);
+      const matchSit = (note.userLifeSituation || '').toLowerCase().includes(q);
+      const matchCommit = (note.actionCommitment || '').toLowerCase().includes(q);
+      if (!matchRef && !matchNote && !matchSit && !matchCommit) {
+        return false;
+      }
+    }
+
+    return true;
+  });
+
+  // Open note editor pre-filled for the current active verse
+  const handleOpenNoteForActiveVerse = () => {
+    setEditingNoteId(null);
+    setNoteSurahNumber(activeReflection.surahNumber);
+    setNoteAyahNumber(activeReflection.ayahNumber);
+    setNoteTitle('');
+    setNoteText('');
+    setNoteCommitment('');
+    setNoteMood('tenang');
+    setNoteEditorOpen(true);
+    
+    setTimeout(() => {
+      const el = document.getElementById('catatan-tadabbur-ayat');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  };
+
+  // Open note editor to edit an existing note
+  const handleEditNote = (note: UserPersonalReflection) => {
+    setEditingNoteId(note.id);
+    setNoteSurahNumber(note.surahNumber);
+    setNoteAyahNumber(note.ayahNumber);
+    setNoteTitle(note.userLifeSituation || '');
+    setNoteText(note.reflectionNote);
+    setNoteCommitment(note.actionCommitment || '');
+    setNoteMood(note.moodTag || 'tenang');
+    setNoteEditorOpen(true);
+
+    setTimeout(() => {
+      const el = document.getElementById('catatan-tadabbur-ayat');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }, 50);
+  };
+
+  // Cancel / reset note form
+  const handleCancelNote = () => {
+    setEditingNoteId(null);
+    setNoteTitle('');
+    setNoteText('');
+    setNoteCommitment('');
+    setNoteEditorOpen(false);
+  };
+
+  // Save or update note
+  const handleSaveNote = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!journalNote.trim()) return;
+    if (!noteText.trim()) return;
 
-    saveUserReflection({
-      ayahRef: `${activeReflection.surahName}: ${activeReflection.ayahNumber}`,
-      surahNumber: activeReflection.surahNumber,
-      ayahNumber: activeReflection.ayahNumber,
-      userLifeSituation: journalSituation || 'Refleksi mendalam ba\'da membaca ayat suci.',
-      reflectionNote: journalNote,
-      actionCommitment: journalCommitment || 'Menjaga keikhlasan dan istiqamah hari ini.',
-      moodTag: journalMood,
-      isFavorite: false
-    });
+    const surahMeta = SURAH_LIST.find(s => s.number === noteSurahNumber);
+    const surahName = surahMeta ? surahMeta.nameLatin : `Surah ${noteSurahNumber}`;
+    const ayahRef = `${surahName}: ${noteAyahNumber}`;
 
-    setJournalNote('');
-    setJournalSituation('');
-    setJournalCommitment('');
-    setJournalOpen(false);
+    if (editingNoteId) {
+      updateUserReflection(editingNoteId, {
+        ayahRef,
+        surahNumber: noteSurahNumber,
+        ayahNumber: noteAyahNumber,
+        userLifeSituation: noteTitle || 'Refleksi mendalam ba\'da membaca ayat suci.',
+        reflectionNote: noteText,
+        actionCommitment: noteCommitment,
+        moodTag: noteMood
+      });
+    } else {
+      saveUserReflection({
+        ayahRef,
+        surahNumber: noteSurahNumber,
+        ayahNumber: noteAyahNumber,
+        userLifeSituation: noteTitle || 'Refleksi mendalam ba\'da membaca ayat suci.',
+        reflectionNote: noteText,
+        actionCommitment: noteCommitment,
+        moodTag: noteMood,
+        isFavorite: false
+      });
+    }
+
+    handleCancelNote();
+  };
+
+  // Copy personal note to clipboard
+  const handleCopyNote = (note: UserPersonalReflection) => {
+    const text = `📖 *Catatan Tadabbur Ayat (${note.ayahRef})*\n\n"${note.reflectionNote}"\n\n📌 Situasi: ${note.userLifeSituation || '-'}\n${note.actionCommitment ? `🎯 Komitmen: ${note.actionCommitment}\n` : ''}💭 Suasana Jiwa: ${note.moodTag || 'Tenang'}\n📅 Dicatat: ${note.createdAt}\n\n— *Think Quran · Hafidz Quran Islamicity*`;
+    navigator.clipboard.writeText(text);
+    setCopySuccess(note.id);
+    setTimeout(() => setCopySuccess(null), 3000);
+  };
+
+  // Jump to verse in Pelacak Hafalan
+  const handleJumpToAyah = (surahNumber: number, ayahNumber: number) => {
+    setSelectedSurah(surahNumber);
+    setSelectedAyah(ayahNumber);
+    setActiveTab('tracker');
   };
 
   // Copy inspiration card text
@@ -255,11 +380,11 @@ export const ThinkQuran: React.FC = () => {
             </a>
 
             <a
-              href="#jurnal-refleksi"
+              href="#catatan-tadabbur-ayat"
               className="px-4 py-2.5 bg-transparent hover:bg-white/10 text-slate-300 text-xs sm:text-sm font-medium rounded-xl transition-colors flex items-center gap-2 cursor-pointer"
             >
               <PenTool className="w-4 h-4 text-amber-400" />
-              <span>Jurnal Refleksi ({savedReflections.length})</span>
+              <span>Catatan Tadabbur Ayat ({savedReflections.length})</span>
             </a>
           </div>
         </div>
@@ -376,9 +501,25 @@ export const ThinkQuran: React.FC = () => {
                 <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                 <span>Tadabbur Terfokus · {activeReflection.theme}</span>
               </div>
-              <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white mt-0.5">
-                Surah {activeReflection.surahName} (Ayat {activeReflection.ayahNumber})
-              </h2>
+              <div className="flex flex-wrap items-center gap-2 mt-0.5">
+                <h2 className="text-xl sm:text-2xl font-bold text-slate-900 dark:text-white">
+                  Surah {activeReflection.surahName} (Ayat {activeReflection.ayahNumber})
+                </h2>
+                {notesForActiveAyah.length > 0 && (
+                  <button
+                    onClick={() => {
+                      setNoteFilterTab('current_ayah');
+                      const el = document.getElementById('catatan-tadabbur-ayat');
+                      if (el) el.scrollIntoView({ behavior: 'smooth' });
+                    }}
+                    className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 font-medium cursor-pointer hover:bg-emerald-200 dark:hover:bg-emerald-900/60 transition-colors"
+                    title="Lihat catatan untuk ayat ini"
+                  >
+                    <Check className="w-3 h-3 text-emerald-600" />
+                    <span>{notesForActiveAyah.length} Catatan Pribadi</span>
+                  </button>
+                )}
+              </div>
             </div>
 
             <div className="flex items-center gap-2">
@@ -404,11 +545,12 @@ export const ThinkQuran: React.FC = () => {
               </button>
 
               <button
-                onClick={() => setJournalOpen(true)}
+                onClick={handleOpenNoteForActiveVerse}
                 className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                title="Tulis catatan tadabbur atau refleksi pribadi untuk ayat ini"
               >
                 <PenTool className="w-3.5 h-3.5 text-amber-300" />
-                <span>Tulis Jurnal</span>
+                <span>Catat Tadabbur</span>
               </button>
             </div>
           </div>
@@ -491,20 +633,29 @@ export const ThinkQuran: React.FC = () => {
             </div>
           </div>
 
-          {/* Quick Nav to Memorization */}
+          {/* Quick Nav to Memorization & Note Taking */}
           <div className="pt-2 flex flex-wrap items-center justify-between gap-3 text-xs text-slate-500">
-            <span>Tersentuh oleh ayat ini? Kunci di memori jangka panjang:</span>
-            <button
-              onClick={() => {
-                setSelectedSurah(activeReflection.surahNumber);
-                setSelectedAyah(activeReflection.ayahNumber);
-                setActiveTab('tracker');
-              }}
-              className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold transition-colors flex items-center gap-1 cursor-pointer"
-            >
-              <span>Hafalkan di Pelacak Hafalan</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <span>Tersentuh oleh ayat ini? Abadikan refleksi atau kunci di hafalan:</span>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleOpenNoteForActiveVerse}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+              >
+                <PenTool className="w-3.5 h-3.5 text-amber-300" />
+                <span>Catat Tadabbur Ayat Ini</span>
+              </button>
+              <button
+                onClick={() => {
+                  setSelectedSurah(activeReflection.surahNumber);
+                  setSelectedAyah(activeReflection.ayahNumber);
+                  setActiveTab('tracker');
+                }}
+                className="px-3 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-800 dark:text-slate-200 font-semibold transition-colors flex items-center gap-1 cursor-pointer"
+              >
+                <span>Hafalkan di Pelacak Hafalan</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
@@ -608,192 +759,503 @@ export const ThinkQuran: React.FC = () => {
         </div>
       </div>
 
-      {/* 6. PERSONAL REFLECTION JOURNAL ("Jurnal Refleksi Pribadi") */}
-      <div id="jurnal-refleksi" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-6 space-y-6 shadow-sm">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-100 dark:border-slate-800">
+      {/* 6. VERSE NOTE-TAKING & TADABBUR SYSTEM ("Catatan Tadabbur Ayat & Refleksi Pribadi") */}
+      <div id="catatan-tadabbur-ayat" className="bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-5 sm:p-6 space-y-6 shadow-sm">
+        {/* Section Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100 dark:border-slate-800">
           <div>
             <div className="text-xs font-semibold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest flex items-center gap-1.5">
               <ShieldCheck className="w-3.5 h-3.5 text-emerald-600" />
-              <span>Jurnal Hati Pribadi · Terenkripsi Lokal & Bebas Iklan</span>
+              <span>Buku Catatan Tadabbur · Refleksi Ayat & Komitmen Pribadi</span>
             </div>
-            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white">
-              Catatan Tadabbur & Komitmen Hidupmu
+            <h3 className="text-lg sm:text-xl font-bold text-slate-900 dark:text-white mt-0.5">
+              Catatan Tadabbur & Refleksi Ayat
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Simpan bisikan batin saat berdialog dengan firman-Nya. Kunci refleksi agar menjadi amal shalih.
+              Abadikan hikmah firman Allah yang menyapa jiwamu untuk ayat-ayat spesifik. Tersimpan aman secara lokal di perangkatmu.
             </p>
           </div>
 
-          <button
-            onClick={() => setJournalOpen(!journalOpen)}
-            className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shrink-0 shadow-xs"
-          >
-            <PenTool className="w-3.5 h-3.5 text-amber-300" />
-            <span>{journalOpen ? 'Tutup Formulir' : '+ Tulis Refleksi Baru'}</span>
-          </button>
+          <div className="flex items-center gap-2 shrink-0">
+            <button
+              onClick={() => {
+                if (noteEditorOpen) {
+                  handleCancelNote();
+                } else {
+                  handleOpenNoteForActiveVerse();
+                }
+              }}
+              className="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white rounded-lg text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+            >
+              <PenTool className="w-3.5 h-3.5 text-amber-300" />
+              <span>{noteEditorOpen ? 'Tutup Editor' : '+ Catat Tadabbur Baru'}</span>
+            </button>
+          </div>
         </div>
 
-        {/* Add Reflection Modal / Drawer Box */}
-        {journalOpen && (
-          <form onSubmit={handleSubmitJournal} className="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700 space-y-4">
-            <div className="text-xs font-bold text-slate-900 dark:text-white flex items-center gap-2">
-              <Heart className="w-4 h-4 text-emerald-600" />
-              <span>Refleksi untuk: {activeReflection.surahName} Ayat {activeReflection.ayahNumber}</span>
+        {/* Note-Taking Form (Editor) */}
+        {noteEditorOpen && (
+          <form onSubmit={handleSaveNote} className="p-4 sm:p-5 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-emerald-500/40 dark:border-emerald-500/30 space-y-4 shadow-sm">
+            <div className="flex items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-700/80 pb-3">
+              <div className="flex items-center gap-2">
+                <span className="w-6 h-6 rounded-md bg-emerald-600 text-white flex items-center justify-center text-xs font-bold">
+                  {editingNoteId ? <Edit3 className="w-3.5 h-3.5" /> : <PenTool className="w-3.5 h-3.5" />}
+                </span>
+                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                  {editingNoteId ? 'Edit Catatan Tadabbur' : 'Tulis Catatan Tadabbur Ayat Baru'}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={handleCancelNote}
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 cursor-pointer"
+                title="Tutup Form"
+              >
+                <X className="w-4 h-4" />
+              </button>
             </div>
 
+            {/* Target Verse Selector */}
+            <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 p-3.5 bg-white dark:bg-slate-900 rounded-lg border border-slate-200 dark:border-slate-700">
+              <div className="sm:col-span-5 space-y-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                  <BookOpen className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Pilih Surat:</span>
+                </label>
+                <select
+                  value={noteSurahNumber}
+                  onChange={(e) => {
+                    const newSurah = Number(e.target.value);
+                    setNoteSurahNumber(newSurah);
+                    setNoteAyahNumber(1);
+                  }}
+                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                >
+                  {SURAH_LIST.map((s) => (
+                    <option key={s.number} value={s.number}>
+                      {s.number}. {s.nameLatin} ({s.numberOfAyahs} ayat)
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="sm:col-span-3 space-y-1">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Nomor Ayat:
+                </label>
+                <select
+                  value={noteAyahNumber}
+                  onChange={(e) => setNoteAyahNumber(Number(e.target.value))}
+                  className="w-full px-3 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 font-medium"
+                >
+                  {Array.from({ length: selectedNoteSurahMeta?.numberOfAyahs || 1 }, (_, i) => i + 1).map((n) => (
+                    <option key={n} value={n}>
+                      Ayat {n}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="sm:col-span-4 flex items-end">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setNoteSurahNumber(activeReflection.surahNumber);
+                    setNoteAyahNumber(activeReflection.ayahNumber);
+                  }}
+                  className="w-full px-2.5 py-1.5 text-xs bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-100 dark:hover:bg-emerald-900/50 border border-emerald-200 dark:border-emerald-800 rounded-lg font-medium transition-colors flex items-center justify-center gap-1.5 cursor-pointer h-[34px]"
+                  title="Gunakan ayat yang sedang dibuka di Think Quran saat ini"
+                >
+                  <Sparkles className="w-3.5 h-3.5 text-amber-500" />
+                  <span>Pakai Ayat Aktif ({activeReflection.surahName}:{activeReflection.ayahNumber})</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Live Verse Preview Card */}
+            {selectedNoteAyah && (
+              <div className="p-3.5 rounded-lg bg-emerald-50/60 dark:bg-emerald-950/20 border border-emerald-200/80 dark:border-emerald-800/40 space-y-2">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-emerald-800 dark:text-emerald-300">
+                  <span>Pratinjau Ayat: Q.S. {selectedNoteSurahMeta?.nameLatin} [{selectedNoteSurahMeta?.number}]: {selectedNoteAyah.numberInSurah}</span>
+                  <span className="text-slate-500 dark:text-slate-400 font-normal">{selectedNoteSurahMeta?.indonesianNameTranslation}</span>
+                </div>
+                <p dir="rtl" className="font-quran text-lg sm:text-xl text-slate-900 dark:text-white leading-relaxed text-right select-text">
+                  {selectedNoteAyah.textArabic}
+                </p>
+                <p className="text-xs text-slate-700 dark:text-slate-300 italic leading-relaxed">
+                  "{selectedNoteAyah.translationId}"
+                </p>
+              </div>
+            )}
+
+            {/* Life Context / Subject */}
             <div className="space-y-1">
               <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Kondisi Hidup atau Ujian yang Sedang Dihadapi:
+                Situasi Hidup / Subjek Refleksi (Opsional):
               </label>
               <input
                 type="text"
-                value={journalSituation}
-                onChange={(e) => setJournalSituation(e.target.value)}
-                placeholder="Contoh: Merasa lelah bekerja dan kurang sabar dengan anak..."
+                value={noteTitle}
+                onChange={(e) => setNoteTitle(e.target.value)}
+                placeholder="Contoh: Menghadapi kekhawatiran rezeki, renungan ba'da shalat subuh, dll..."
                 className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
               />
             </div>
 
+            {/* Personal Tadabbur / Reflection Text */}
             <div className="space-y-1">
-              <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                Pesan Allah yang Paling Menyentuh Hatimu (Refleksi):
-              </label>
+              <div className="flex items-center justify-between">
+                <label className="text-xs font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-1">
+                  <span>Catatan Refleksi & Tadabbur Pribadi:</span>
+                  <span className="text-rose-500">*</span>
+                </label>
+                <span className="text-[10px] text-slate-400">
+                  {noteText.trim().split(/\s+/).filter(Boolean).length} kata · {noteText.length} karakter
+                </span>
+              </div>
               <textarea
-                rows={3}
+                rows={4}
                 required
-                value={journalNote}
-                onChange={(e) => setJournalNote(e.target.value)}
-                placeholder="Apa yang kamu sadari setelah membaca ayat ini? Apa yang ingin kamu ubah dalam dirimu?"
-                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                value={noteText}
+                onChange={(e) => setNoteText(e.target.value)}
+                placeholder="Tuliskan hikmah yang kamu peroleh dari ayat ini. Apa yang sedang Allah sampaikan ke lubuk hatimu? Mengapa ayat ini terasa relevan dengan perjalanan hidupmu?"
+                className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500 leading-relaxed font-normal"
               />
             </div>
 
+            {/* Quick Inspiration Prompts */}
+            <div className="space-y-1.5">
+              <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
+                <span>Inspirasi Pertanyaan Pemantik (klik untuk menyisipkan ke catatan):</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5">
+                {[
+                  "Pesan apa yang paling menyapa situasi hidup saya saat membaca ayat ini?",
+                  "Nikmat dan karunia apa yang diingatkan ayat ini yang sering saya lupakan?",
+                  "Bagaimana saya menerapkan keikhlasan dan kesabaran setelah merenungkan ayat ini?",
+                  "Satu kebiasaan baik apa yang ingin saya mulai setelah merenungi ayat ini?"
+                ].map((prompt, pIdx) => (
+                  <button
+                    key={pIdx}
+                    type="button"
+                    onClick={() => {
+                      setNoteText(prev => prev ? `${prev}\n\n• ${prompt} ` : `• ${prompt} `);
+                    }}
+                    className="px-2 py-1 text-[11px] bg-white dark:bg-slate-900 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-md transition-colors cursor-pointer text-left"
+                  >
+                    + {prompt}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Action Commitment & Mood Tag */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Komitmen Tindakan Nyata Hari Ini:
+                  Komitmen Tindakan / Amalan Nyata (Opsional):
                 </label>
                 <input
                   type="text"
-                  value={journalCommitment}
-                  onChange={(e) => setJournalCommitment(e.target.value)}
-                  placeholder="Contoh: Meminta maaf ke pasangan, atau shalat tepat waktu..."
+                  value={noteCommitment}
+                  onChange={(e) => setNoteCommitment(e.target.value)}
+                  placeholder="Contoh: Bersedekah besok pagi, lebih sabar saat berbicara..."
                   className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500"
                 />
               </div>
 
               <div className="space-y-1">
                 <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                  Kondisi Jiwa Setelah Refleksi:
+                  Suasana Hati Setelah Merenung:
                 </label>
-                <div className="flex items-center gap-1.5 pt-1">
-                  {(['tenang', 'tersentuh', 'bersemangat', 'insyaf', 'bersyukur'] as const).map((m) => (
+                <div className="flex items-center gap-1.5 pt-1 flex-wrap">
+                  {([
+                    { tag: 'tenang', label: 'Tenang 🌿' },
+                    { tag: 'bersyukur', label: 'Bersyukur ✨' },
+                    { tag: 'tersentuh', label: 'Tersentuh 💧' },
+                    { tag: 'insyaf', label: 'Insyaf 🤲' },
+                    { tag: 'bersemangat', label: 'Semangat 🔥' }
+                  ] as const).map(({ tag, label }) => (
                     <button
-                      key={m}
+                      key={tag}
                       type="button"
-                      onClick={() => setJournalMood(m)}
-                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium capitalize cursor-pointer transition-colors ${
-                        journalMood === m
-                          ? 'bg-emerald-600 text-white font-semibold'
-                          : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700'
+                      onClick={() => setNoteMood(tag)}
+                      className={`px-2.5 py-1 rounded-md text-[11px] font-medium cursor-pointer transition-colors ${
+                        noteMood === tag
+                          ? 'bg-emerald-600 text-white font-semibold shadow-2xs'
+                          : 'bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                     >
-                      {m}
+                      {label}
                     </button>
                   ))}
                 </div>
               </div>
             </div>
 
-            <div className="flex justify-end gap-2 pt-2 border-t border-slate-200 dark:border-slate-700">
+            {/* Form Footer Buttons */}
+            <div className="flex justify-end gap-2 pt-3 border-t border-slate-200 dark:border-slate-700">
               <button
                 type="button"
-                onClick={() => setJournalOpen(false)}
-                className="px-3 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer"
+                onClick={handleCancelNote}
+                className="px-3.5 py-1.5 text-xs text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white cursor-pointer transition-colors"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-4 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <Check className="w-3.5 h-3.5" />
-                <span>Simpan ke Jurnal Hati (+40 XP)</span>
+                <span>{editingNoteId ? 'Perbarui Catatan Tadabbur' : 'Simpan Catatan Tadabbur (+40 XP)'}</span>
               </button>
             </div>
           </form>
         )}
 
-        {/* Saved Reflections Stream */}
-        {savedReflections.length === 0 ? (
-          <div className="text-center py-10 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 space-y-2">
-            <PenTool className="w-6 h-6 text-slate-400 mx-auto" />
-            <div className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-              Belum Ada Jurnal Refleksi Tersimpan
+        {/* Filter, Search & View Controls */}
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-2">
+          {/* Filter Tabs */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
+            <button
+              onClick={() => setNoteFilterTab('all')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
+                noteFilterTab === 'all'
+                  ? 'bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              Semua Catatan ({savedReflections.length})
+            </button>
+            <button
+              onClick={() => setNoteFilterTab('current_ayah')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                noteFilterTab === 'current_ayah'
+                  ? 'bg-white dark:bg-slate-900 text-emerald-700 dark:text-emerald-400 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <span>Ayat Ini ({notesForActiveAyah.length})</span>
+            </button>
+            <button
+              onClick={() => setNoteFilterTab('favorites')}
+              className={`px-3 py-1 rounded-md text-xs font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
+                noteFilterTab === 'favorites'
+                  ? 'bg-white dark:bg-slate-900 text-amber-600 dark:text-amber-400 shadow-2xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+            >
+              <Bookmark className="w-3 h-3 fill-amber-500 text-amber-500" />
+              <span>Favorit ({savedReflections.filter(r => r.isFavorite).length})</span>
+            </button>
+          </div>
+
+          {/* Search & Mood Filter */}
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-56">
+              <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={noteSearchQuery}
+                onChange={(e) => setNoteSearchQuery(e.target.value)}
+                placeholder="Cari ayat atau kata kunci..."
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-white placeholder:text-slate-400 focus:outline-none focus:ring-1 focus:ring-emerald-500"
+              />
+              {noteSearchQuery && (
+                <button
+                  onClick={() => setNoteSearchQuery('')}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200"
+                >
+                  <X className="w-3.5 h-3.5" />
+                </button>
+              )}
             </div>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              Setiap kali sebuah ayat menggetarkan hatimu, tuangkan ke dalam jurnal ini agar menjadi saksi perjalanan hijrah batinmu.
-            </p>
+
+            <select
+              value={noteFilterMood}
+              onChange={(e) => setNoteFilterMood(e.target.value)}
+              className="px-2.5 py-1.5 text-xs bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
+            >
+              <option value="all">Semua Suasana</option>
+              <option value="tenang">Tenang 🌿</option>
+              <option value="bersyukur">Bersyukur ✨</option>
+              <option value="tersentuh">Tersentuh 💧</option>
+              <option value="insyaf">Insyaf 🤲</option>
+              <option value="bersemangat">Bersemangat 🔥</option>
+            </select>
+          </div>
+        </div>
+
+        {/* Saved Notes Stream */}
+        {filteredSavedNotes.length === 0 ? (
+          <div className="text-center py-12 bg-slate-50 dark:bg-slate-800/30 rounded-xl border border-dashed border-slate-200 dark:border-slate-800 space-y-3">
+            <div className="w-12 h-12 rounded-full bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 flex items-center justify-center mx-auto text-emerald-600">
+              <FileText className="w-6 h-6" />
+            </div>
+            <div className="space-y-1 max-w-sm mx-auto">
+              <div className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                {noteSearchQuery || noteFilterTab !== 'all' || noteFilterMood !== 'all'
+                  ? 'Tidak Ada Catatan yang Sesuai Filter'
+                  : 'Belum Ada Catatan Tadabbur Tersimpan'}
+              </div>
+              <p className="text-xs text-slate-500 leading-relaxed">
+                {noteSearchQuery || noteFilterTab !== 'all' || noteFilterMood !== 'all'
+                  ? 'Coba ubah kata kunci pencarian atau bersihkan filter suasana hati.'
+                  : 'Setiap kali sebuah ayat menggetarkan hatimu, tuangkan ke dalam catatan ini agar hikmahnya selalu membimbing langkahmu.'}
+              </p>
+            </div>
+            <div className="flex justify-center gap-2 pt-1">
+              {noteSearchQuery || noteFilterTab !== 'all' || noteFilterMood !== 'all' ? (
+                <button
+                  onClick={() => {
+                    setNoteSearchQuery('');
+                    setNoteFilterTab('all');
+                    setNoteFilterMood('all');
+                  }}
+                  className="px-3.5 py-1.5 text-xs bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 text-slate-800 dark:text-slate-200 font-medium rounded-lg transition-colors cursor-pointer"
+                >
+                  Reset Filter
+                </button>
+              ) : (
+                <button
+                  onClick={handleOpenNoteForActiveVerse}
+                  className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                >
+                  <PenTool className="w-3.5 h-3.5 text-amber-300" />
+                  <span>Catat Refleksi Ayat Ini ({activeReflection.surahName}:{activeReflection.ayahNumber})</span>
+                </button>
+              )}
+            </div>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {savedReflections.map((ref) => (
+            {filteredSavedNotes.map((note) => (
               <div
-                key={ref.id}
-                className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs space-y-3 relative group"
+                key={note.id}
+                className="p-4 sm:p-5 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs hover:shadow-xs transition-shadow space-y-3 relative group flex flex-col justify-between"
               >
-                <div className="flex items-center justify-between gap-2">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400">
-                      {ref.ayahRef}
-                    </span>
-                    {ref.moodTag && (
-                      <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize">
-                        {ref.moodTag}
+                <div className="space-y-3">
+                  {/* Card Header */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="text-xs font-bold px-2.5 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200/60 dark:border-emerald-800/40">
+                        {note.ayahRef}
                       </span>
-                    )}
+                      {note.moodTag && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 capitalize font-medium">
+                          {note.moodTag === 'tenang' && '🌿 '}
+                          {note.moodTag === 'bersyukur' && '✨ '}
+                          {note.moodTag === 'tersentuh' && '💧 '}
+                          {note.moodTag === 'insyaf' && '🤲 '}
+                          {note.moodTag === 'bersemangat' && '🔥 '}
+                          {note.moodTag}
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-1">
+                      <button
+                        onClick={() => toggleFavoriteReflection(note.id)}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-amber-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title={note.isFavorite ? 'Hapus dari Favorit' : 'Tandai Favorit'}
+                      >
+                        <Bookmark className={`w-3.5 h-3.5 ${note.isFavorite ? 'fill-amber-500 text-amber-500' : ''}`} />
+                      </button>
+
+                      <button
+                        onClick={() => handleEditNote(note)}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-emerald-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Edit Catatan"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        onClick={() => handleCopyNote(note)}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-sky-600 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+                        title="Salin Catatan"
+                      >
+                        {copySuccess === note.id ? <Check className="w-3.5 h-3.5 text-emerald-500" /> : <Share2 className="w-3.5 h-3.5" />}
+                      </button>
+
+                      <button
+                        onClick={() => setConfirmDeleteId(note.id)}
+                        className="p-1.5 rounded-md text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
+                        title="Hapus Catatan"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
                   </div>
 
-                  <div className="flex items-center gap-1">
-                    <button
-                      onClick={() => toggleFavoriteReflection(ref.id)}
-                      className="p-1 text-slate-400 hover:text-amber-500 cursor-pointer"
-                      title="Tandai Favorit"
-                    >
-                      <Bookmark className={`w-3.5 h-3.5 ${ref.isFavorite ? 'fill-amber-500 text-amber-500' : ''}`} />
-                    </button>
-                    <button
-                      onClick={() => deleteUserReflection(ref.id)}
-                      className="p-1 text-slate-400 hover:text-rose-500 cursor-pointer"
-                      title="Hapus Catatan"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
+                  {/* Delete Confirmation Overlay */}
+                  {confirmDeleteId === note.id && (
+                    <div className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900/50 flex items-center justify-between text-xs">
+                      <span className="text-rose-700 dark:text-rose-300 font-medium">Hapus catatan ini?</span>
+                      <div className="flex items-center gap-1.5">
+                        <button
+                          onClick={() => setConfirmDeleteId(null)}
+                          className="px-2 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-600 text-[11px] cursor-pointer"
+                        >
+                          Batal
+                        </button>
+                        <button
+                          onClick={() => {
+                            deleteUserReflection(note.id);
+                            setConfirmDeleteId(null);
+                          }}
+                          className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white text-[11px] font-semibold cursor-pointer"
+                        >
+                          Ya, Hapus
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Life Situation context */}
+                  {note.userLifeSituation && (
+                    <div className="text-[11px] font-medium text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                      <Compass className="w-3 h-3 text-sky-500 shrink-0" />
+                      <span className="line-clamp-1">{note.userLifeSituation}</span>
+                    </div>
+                  )}
+
+                  {/* Reflection Note Content */}
+                  <div className="text-xs sm:text-sm text-slate-800 dark:text-slate-200 leading-relaxed font-normal whitespace-pre-line bg-slate-50/70 dark:bg-slate-800/40 p-3 rounded-lg border border-slate-100 dark:border-slate-800">
+                    "{note.reflectionNote}"
                   </div>
+
+                  {/* Action Commitment */}
+                  {note.actionCommitment && (
+                    <div className="p-2 rounded-lg bg-emerald-50/50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-800/30 flex items-start gap-1.5 text-xs text-emerald-800 dark:text-emerald-300">
+                      <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
+                      <div>
+                        <span className="font-semibold">Komitmen Tindakan: </span>
+                        <span>{note.actionCommitment}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-1">
-                  <div className="text-[11px] font-medium text-slate-500">
-                    Situasi: {ref.userLifeSituation}
+                {/* Card Footer */}
+                <div className="pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400 mt-2">
+                  <div className="flex items-center gap-2">
+                    <span>{note.createdAt}</span>
+                    <span className="flex items-center gap-0.5 text-emerald-600 dark:text-emerald-400 font-medium">
+                      <Lock className="w-2.5 h-2.5" />
+                      <span>Privat</span>
+                    </span>
                   </div>
-                  <p className="text-xs text-slate-700 dark:text-slate-300 leading-relaxed font-normal">
-                    "{ref.reflectionNote}"
-                  </p>
-                </div>
 
-                {ref.actionCommitment && (
-                  <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex items-start gap-1.5 text-xs text-emerald-800 dark:text-emerald-300">
-                    <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0 mt-0.5" />
-                    <span className="font-medium">Komitmen: {ref.actionCommitment}</span>
-                  </div>
-                )}
-
-                <div className="text-[10px] text-slate-400 pt-1 flex items-center justify-between">
-                  <span>Dicatat pada {ref.createdAt}</span>
-                  <span className="flex items-center gap-1 text-emerald-600">
-                    <Lock className="w-2.5 h-2.5" />
-                    <span>Privat</span>
-                  </span>
+                  <button
+                    onClick={() => handleJumpToAyah(note.surahNumber, note.ayahNumber)}
+                    className="hover:text-emerald-600 dark:hover:text-emerald-400 font-medium transition-colors flex items-center gap-1 cursor-pointer"
+                    title="Buka ayat ini di Pelacak Hafalan"
+                  >
+                    <span>Buka Ayat</span>
+                    <ArrowRight className="w-2.5 h-2.5" />
+                  </button>
                 </div>
               </div>
             ))}

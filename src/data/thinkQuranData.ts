@@ -133,6 +133,22 @@ export const CURATED_THINK_QURAN_REFLECTIONS: QuranReflectionItem[] = [
     actionableStep: "Sebelum memulai rapat, presentasi, atau keputusan penting, tundukkan kepala sejenak dan lafalkan 'Iyyāka na'budu wa iyyāka nasta'īn' dengan penuh kerendahan.",
     heartfeltPrayer: "Ya Allah, jangan serahkan urusanku kepada diriku sendiri walau sekejap mata. Bimbing langkahku dan karuniakan pertolongan-Mu di setiap jengkal perjalananku.",
     tags: ['Ketergantungan Ilahi', 'Kemerdekaan Jiwa', 'Shalat Khusyuk', 'Tawadhu']
+  },
+  {
+    id: 'tq-ar-rahman-60',
+    surahNumber: 55,
+    surahName: 'Ar-Rahman',
+    ayahNumber: 60,
+    ayahArabic: 'هَلْ جَزَآءُ ٱلْإِحْسَٰنِ إِلَّا ٱلْإِحْسَٰنُ',
+    transliteration: "Hal jazaaa'ul-ihsaani illal-ihsaan",
+    translation: "Tidak ada balasan untuk kebaikan selain kebaikan (pula).",
+    theme: 'Ketenangan & Kecemasan',
+    divineMessage: "Sebuah kaidah universal kepastian Ilahi: Tidak ada satu pun kebaikan yang kamu tabur di muka bumi yang akan hilang menguap sia-sia. Bahkan jika manusia lupa berterima kasih, Tuhan Yang Maha Pengasih (Ar-Rahman) membalasnya dengan berlipat kebaikan dan kedamaian batin.",
+    dailyLifeContext: "Pernahkah kamu merasa lelah berbuat baik di tempat kerja atau keluarga saat orang lain tidak menghargaimu? Ingatlah ayat ini: target kebaikanmu bukanlah tepuk tangan manusia, melainkan balasan langsung dari Allah Yang Maha Membalas.",
+    soulReflectionPrompt: "Kebaikan tulus apa yang pernah kamu lakukan dalam diam yang buah keberkahannya masih kamu rasakan hingga hari ini?",
+    actionableStep: "Lakukan satu kebaikan kecil tanpa nama hari ini (mendoakan seseorang, menyingkirkan duri, atau memberi sedekah tersembunyi) dan rasakan ketenangan hati.",
+    heartfeltPrayer: "Ya Allah, mampukan aku menjadi pribadi yang senantiasa menabur ihsan dalam segala keadaan, dan jadikanlah balasan kebaikan-Mu penyejuk jiwaku di dunia dan akhirat.",
+    tags: ['Ihsan Sejati', 'Kepastian Balasan', 'Ketenangan Jiwa', 'Syukur']
   }
 ];
 

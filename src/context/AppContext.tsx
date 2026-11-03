@@ -14,7 +14,8 @@ import {
   AppTheme,
   UserPersonalReflection,
   DailyMemorizationTarget,
-  DailyTargetType
+  DailyTargetType,
+  MemorizationVoiceJournal
 } from '../types';
 
 interface AppContextType {
@@ -66,11 +67,17 @@ interface AppContextType {
   checkInDailyStreak: () => void;
   savedReflections: UserPersonalReflection[];
   saveUserReflection: (reflection: Omit<UserPersonalReflection, 'id' | 'createdAt'>) => void;
+  updateUserReflection: (id: string, updatedData: Partial<UserPersonalReflection>) => void;
   deleteUserReflection: (id: string) => void;
   toggleFavoriteReflection: (id: string) => void;
   activeReflectionAyah: { surahNumber: number; ayahNumber: number } | null;
   setActiveReflectionAyah: (val: { surahNumber: number; ayahNumber: number } | null) => void;
   openReflectionForAyah: (surahNumber: number, ayahNumber: number) => void;
+  simulateGoalStreak: (days: number) => void;
+  memorizationJournals: MemorizationVoiceJournal[];
+  saveMemorizationJournal: (journal: Omit<MemorizationVoiceJournal, 'id' | 'createdAt'>) => void;
+  updateMemorizationJournal: (id: string, updatedData: Partial<MemorizationVoiceJournal>) => void;
+  deleteMemorizationJournal: (id: string) => void;
 }
 
 const AppContext = createContext<AppContextType | null>(null);
@@ -84,18 +91,35 @@ const STORAGE_KEYS = {
   SETTINGS: 'hafidz_settings_v2',
   SYNC_TOKEN: 'hafidz_sync_token_v2',
   REFLECTIONS: 'hafidz_reflections_v2',
-  DAILY_TARGET: 'hafidz_daily_target_v2'
+  DAILY_TARGET: 'hafidz_daily_target_v2',
+  MEMORIZATION_JOURNALS: 'hafidz_memorization_voice_journals_v2'
+};
+
+// Helper to generate recent consecutive completed dates
+const getRecentConsecutiveDates = (daysCount: number): string[] => {
+  const dates: string[] = [];
+  const today = new Date();
+  for (let i = 0; i < daysCount; i++) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    dates.push(d.toISOString().split('T')[0]);
+  }
+  return dates.reverse();
 };
 
 const DEFAULT_DAILY_TARGET: DailyMemorizationTarget = {
   targetType: 'ayah_count',
+  targetUnit: 'ayat',
   targetAyahCount: 5,
+  targetPageCount: 1,
   targetSurahNumber: 67,
   targetSurahName: 'Al-Mulk',
   targetSurahAyahRange: { from: 1, to: 5 },
   dailyGoalMode: 'all',
   lastTargetDate: new Date().toISOString().split('T')[0],
-  completedAyahKeys: ['67_1', '67_2']
+  completedAyahKeys: ['67_1', '67_2'],
+  completedGoalDates: getRecentConsecutiveDates(8),
+  goalStreak: 8
 };
 
 const DEFAULT_GAMIFICATION: GamificationState = {
@@ -275,6 +299,35 @@ const DEFAULT_SAVED_REFLECTIONS: UserPersonalReflection[] = [
   }
 ];
 
+const DEFAULT_MEMORIZATION_JOURNALS: MemorizationVoiceJournal[] = [
+  {
+    id: 'vj-default-1',
+    date: new Date().toISOString().split('T')[0],
+    surahNumber: 55,
+    surahName: 'Ar-Rahman',
+    ayahNumber: 4,
+    targetProgressSummary: 'Target: 5 Ayat (Selesai 4 Ayat / 80%)',
+    streakDays: 8,
+    transcript: 'Alhamdulillah, setoran hafalan Surah Ar-Rahman ayat 1 sampai 4 berjalan lancar ba\'da Subuh tadi. Mad thabi\'i di ayat 3 dan 4 sudah mulai stabil, tapi perlu lebih teliti saat waqaf di ayat berikutnya.',
+    mood: 'lancar',
+    tags: ['Ar-Rahman', 'Ba\'da Subuh', 'Target Harian'],
+    createdAt: new Date().toISOString().split('T')[0]
+  },
+  {
+    id: 'vj-default-2',
+    date: new Date(Date.now() - 86400000).toISOString().split('T')[0],
+    surahNumber: 67,
+    surahName: 'Al-Mulk',
+    ayahNumber: 2,
+    targetProgressSummary: 'Target: 5 Ayat (Selesai 5 Ayat / 100%)',
+    streakDays: 7,
+    transcript: 'Hari ini sempat overthinking pekerjaan kantor, tapi setelah mental walk 5 menit membayangkan rute Kota Memori Al-Mulk ayat 2, pikiran jadi jauh lebih tenang. Target 5 ayat tuntas 100%.',
+    mood: 'syukur',
+    tags: ['Al-Mulk', 'Kota Memori', 'Ketenangan Jiwa'],
+    createdAt: new Date(Date.now() - 86400000).toISOString().split('T')[0]
+  }
+];
+
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [activeTab, setActiveTab] = useState<'thinkquran' | 'tracker' | 'palace' | 'tajweed' | 'teacher' | 'gamification' | 'community'>('tracker');
   const [selectedSurah, setSelectedSurah] = useState<number>(67); // Default to Al-Mulk
@@ -288,6 +341,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       console.warn(e);
     }
     return DEFAULT_SAVED_REFLECTIONS;
+  });
+  const [memorizationJournals, setMemorizationJournals] = useState<MemorizationVoiceJournal[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.MEMORIZATION_JOURNALS);
+      if (saved) return JSON.parse(saved);
+    } catch (e) {
+      console.warn(e);
+    }
+    return DEFAULT_MEMORIZATION_JOURNALS;
   });
   const [theme, setTheme] = useState<AppTheme>('light');
   const [language, setLanguage] = useState<AppLanguage>('id');
@@ -348,6 +410,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (saved) {
         const parsed = JSON.parse(saved);
         const today = new Date().toISOString().split('T')[0];
+        if (!parsed.completedGoalDates || parsed.completedGoalDates.length === 0) {
+          parsed.completedGoalDates = getRecentConsecutiveDates(8);
+          parsed.goalStreak = 8;
+        }
         // If stored data was from previous day, refresh today's completed keys
         if (parsed.lastTargetDate !== today) {
           return {
@@ -468,6 +534,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   useEffect(() => {
     try {
+      localStorage.setItem(STORAGE_KEYS.MEMORIZATION_JOURNALS, JSON.stringify(memorizationJournals));
+    } catch (e) {
+      console.warn(e);
+    }
+  }, [memorizationJournals]);
+
+  useEffect(() => {
+    try {
       localStorage.setItem(STORAGE_KEYS.DAILY_TARGET, JSON.stringify(dailyTarget));
     } catch (e) {
       console.warn(e);
@@ -579,15 +653,42 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Reset today's target progress
   const resetDailyTargetProgress = () => {
+    const today = new Date().toISOString().split('T')[0];
     setDailyTarget(prev => ({
       ...prev,
-      completedAyahKeys: []
+      completedAyahKeys: [],
+      completedGoalDates: (prev.completedGoalDates || []).filter(d => d !== today)
     }));
     setGamification(g => ({
       ...g,
       todayCompletedAyahs: 0
     }));
     setNotificationBanner('Progres target hari ini telah direset.');
+  };
+
+  // Simulate or manually adjust consecutive goal completion streak
+  const simulateGoalStreak = (days: number) => {
+    const targetDays = Math.max(0, days);
+    const newDates = getRecentConsecutiveDates(targetDays);
+    setDailyTarget(prev => ({
+      ...prev,
+      completedGoalDates: newDates,
+      goalStreak: targetDays
+    }));
+    setGamification(g => ({
+      ...g,
+      streakDays: targetDays
+    }));
+    if (targetDays > 7) {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 }
+      });
+      setNotificationBanner(`🏆 Streak melampaui 7 hari (${targetDays} hari berturut-turut). Trofi Istiqomah Emas Terbuka!`);
+    } else {
+      setNotificationBanner(`Streak target diatur menjadi ${targetDays} hari berturut-turut.`);
+    }
   };
 
   // Update Ayah memorization status
@@ -630,6 +731,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const today = new Date().toISOString().split('T')[0];
         const isNewDay = prev.lastTargetDate !== today;
         const currentKeys = isNewDay ? [] : prev.completedAyahKeys;
+        const currentGoalDates = prev.completedGoalDates || [];
 
         // Check if surah matches when in surah target mode
         const matchesSurah = prev.targetType !== 'surah' || (prev.targetSurahNumber === undefined || prev.targetSurahNumber === surah);
@@ -642,6 +744,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (matchesSurah && matchesMode && !currentKeys.includes(key)) {
           const updatedKeys = [...currentKeys, key];
           const targetCount = prev.targetAyahCount;
+          let updatedGoalDates = currentGoalDates;
 
           setGamification(g => ({
             ...g,
@@ -649,7 +752,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }));
 
           // Trigger target completed celebration if just reached
-          if (updatedKeys.length === targetCount) {
+          if (updatedKeys.length >= targetCount) {
+            if (!updatedGoalDates.includes(today)) {
+              updatedGoalDates = [...updatedGoalDates, today];
+            }
             confetti({
               particleCount: 100,
               spread: 80,
@@ -664,7 +770,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return {
             ...prev,
             lastTargetDate: today,
-            completedAyahKeys: updatedKeys
+            completedAyahKeys: updatedKeys,
+            completedGoalDates: updatedGoalDates
           };
         }
         return isNewDay ? { ...prev, lastTargetDate: today, completedAyahKeys: [] } : prev;
@@ -790,8 +897,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  const updateUserReflection = (id: string, updatedData: Partial<UserPersonalReflection>) => {
+    setSavedReflections(prev => prev.map(r => r.id === id ? { ...r, ...updatedData } : r));
+    if (!isFocusMode) {
+      setNotificationBanner('Catatan tadabbur berhasil diperbarui.');
+    }
+  };
+
   const deleteUserReflection = (id: string) => {
     setSavedReflections(prev => prev.filter(r => r.id !== id));
+    if (!isFocusMode) {
+      setNotificationBanner('Catatan refleksi dihapus.');
+    }
   };
 
   const toggleFavoriteReflection = (id: string) => {
@@ -804,6 +921,38 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSelectedAyah(ayahNumber);
     setActiveTab('thinkquran');
     if (isFocusMode) setIsFocusMode(false);
+  };
+
+  const saveMemorizationJournal = (journalData: Omit<MemorizationVoiceJournal, 'id' | 'createdAt'>) => {
+    const newJournal: MemorizationVoiceJournal = {
+      ...journalData,
+      id: 'vj-' + Date.now(),
+      createdAt: new Date().toISOString().split('T')[0]
+    };
+    setMemorizationJournals(prev => [newJournal, ...prev]);
+    addXP(35, 'Merekam Jurnal Suara Progres Hafalan');
+    confetti({
+      particleCount: 50,
+      spread: 60,
+      origin: { y: 0.7 }
+    });
+    if (!isFocusMode) {
+      setNotificationBanner('🎙️ Catatan suara progres hafalan Anda berhasil disimpan (+35 XP).');
+    }
+  };
+
+  const updateMemorizationJournal = (id: string, updatedData: Partial<MemorizationVoiceJournal>) => {
+    setMemorizationJournals(prev => prev.map(j => j.id === id ? { ...j, ...updatedData, updatedAt: new Date().toISOString().split('T')[0] } : j));
+    if (!isFocusMode) {
+      setNotificationBanner('Catatan suara progres hafalan diperbarui.');
+    }
+  };
+
+  const deleteMemorizationJournal = (id: string) => {
+    setMemorizationJournals(prev => prev.filter(j => j.id !== id));
+    if (!isFocusMode) {
+      setNotificationBanner('Catatan suara progres dihapus.');
+    }
   };
 
   return (
@@ -856,11 +1005,17 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       checkInDailyStreak,
       savedReflections,
       saveUserReflection,
+      updateUserReflection,
       deleteUserReflection,
       toggleFavoriteReflection,
       activeReflectionAyah,
       setActiveReflectionAyah,
-      openReflectionForAyah
+      openReflectionForAyah,
+      simulateGoalStreak,
+      memorizationJournals,
+      saveMemorizationJournal,
+      updateMemorizationJournal,
+      deleteMemorizationJournal
     }}>
       {children}
     </AppContext.Provider>
